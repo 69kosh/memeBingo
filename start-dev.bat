@@ -1,0 +1,1 @@
+cd src && uvicorn --reload main:app && cd ..
