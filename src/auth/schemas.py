@@ -1,18 +1,18 @@
 from pydantic import BaseModel
 
-class UserFeatures(BaseModel):
+class UserAttributes(BaseModel):
     id: str | None
-    isGuest: bool = False
+    isGuest: bool | None
     name: str | None
 
 class LoginForm(BaseModel):
     email: str
     password: str
 
-class SingupForm(BaseModel):
+class SignupForm(BaseModel):
     name: str
     email: str
     password: str
 
-class SingupFormResponse(BaseModel):
+class SignupFormResponse(BaseModel):
 	userId: str
