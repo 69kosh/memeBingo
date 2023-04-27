@@ -1,11 +1,13 @@
 from abc import ABC
 from .models import AuthModel, UserModel
-
+import uuid
+import time
 
 class AbcUsersRepo(ABC):
-    def get(self, id) -> UserModel:
+    def get(self, id: str) -> UserModel:
         ...
-
+    def create(self, name: str, isGuest = False) -> UserModel:
+        ...
 
 class MemoUsersRepo(AbcUsersRepo):
 	
@@ -19,14 +21,20 @@ class MemoUsersRepo(AbcUsersRepo):
     def get(self, id) -> UserModel:
         return self.users.get(id, None)
 
+    def create(self, name: str, isGuest = False) -> UserModel:
+        id = str(uuid.uuid4())
+        self.users[id] = UserModel(id=id, name=name, isGuest=isGuest, createdAt=time.time())
+        return self.users[id]
 
 class AbcAuthRepo(ABC):
     def checkPassword(self, email: str, password: str) -> bool:
         ...
 
-    def getByEmail(self, email: str):
+    def getByEmail(self, email: str) -> AuthModel:
         ...
 
+    def create(self, email: str, password: str, userId: str) -> AuthModel:
+        ...
 
 class MemoAuthRepo(AbcAuthRepo):
 
@@ -46,3 +54,10 @@ class MemoAuthRepo(AbcAuthRepo):
 
     def getByEmail(self, email: str) -> AuthModel:
         return self.auths.get(email, None)
+
+    def create(self, email: str, password: str, userId: str) -> AuthModel:
+        if email in self.auths:
+            raise Exception('Email already exists')
+        
+        self.auths[email] = AuthModel(email=email, password=password, userId=userId)
+        return self.auths[email]
