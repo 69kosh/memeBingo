@@ -1,0 +1,14 @@
+version: '3.3'
+
+services:
+  
+  backend:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 8081
+    environment:
+      JWT_SECRET: 12345
+      JWT_ALGORITHM: HS256
+      JWT_MAXAGE: 600
+      JWT_REFRESH_MAXAGE: 2592000
+    ports:
+      - 8081:8081

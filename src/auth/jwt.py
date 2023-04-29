@@ -1,19 +1,16 @@
 
 import time
 import jwt
-from decouple import config
+from dotenv import load_dotenv
+import os
 from fastapi.security.http import *
 from fastapi import Request, Response, Depends
 
-JWT_SECRET = config('jwt_secret')
-JWT_ALGORITHM = config('jwt_algorithm')
-JWT_SCHEMA = config('jwt_schema')
-JWT_MAXAGE = 600
-JWT_REFRESH_MAXAGE = 7*24*3600
-
-# class JWTPayload(BaseModel):
-#     payload: dict
-
+load_dotenv()
+JWT_SECRET = os.getenv('JWT_SECRET')
+JWT_ALGORITHM = os.getenv('JWT_ALGORITHM')
+JWT_MAXAGE = int(os.getenv('JWT_MAXAGE', 600))
+JWT_REFRESH_MAXAGE = int(os.getenv('JWT_REFRESH_MAXAGE', 24*3600))
 
 def signToken(data: dict, expires: int = 600) -> str:
     payload = data.copy()
@@ -36,22 +33,14 @@ def setTokens(response: Response, payload: dict):
     refreshToken = signToken(payload, JWT_REFRESH_MAXAGE)
     response.set_cookie(key="token", value=token, max_age=JWT_MAXAGE, httponly=True)
     response.set_cookie(key="refreshToken", value=refreshToken, max_age=JWT_REFRESH_MAXAGE, httponly=True)
-    response.set_cookie(key="schema", value=JWT_SCHEMA, max_age=JWT_REFRESH_MAXAGE, httponly=True)
 
 def cleanTokens(response: Response):
     response.delete_cookie(key="token", httponly=True)
     response.delete_cookie(key="refreshToken", httponly=True)
-    response.delete_cookie(key="schema", httponly=True)
 
 def accessControl(rulesChecker: callable):
     def inner(request: Request):
-        # scheme = request.cookies.get('schema')
-        # if scheme != JWT_SCHEMA:
-        #     raise HTTPException(
-        #         status_code=HTTP_403_FORBIDDEN,
-        #         detail="Invalid authentication credentials",
-        #     )
-
+        
         token = request.cookies.get('token')
         payload = decodeToken(token)
         subject = {} if payload is None else payload
@@ -78,10 +67,6 @@ def isNotAuthorized(subject, request):
     return subject.get('userId', None) is None
 
 def getJWTPayload(request: Request) -> dict:
-    # scheme = request.cookies.get('schema')
-    # if scheme != JWT_SCHEMA:
-    #     return {}
-
     token = request.cookies.get('token')
     payload = decodeToken(token)
     return {} if payload is None else payload
