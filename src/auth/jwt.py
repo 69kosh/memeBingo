@@ -48,12 +48,12 @@ def checkRefreshToken(request: Request):
     if payload is None:
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN,
-            detail="Not authorized"
+            detail="Not authenticated"
         )
     return payload
     
 
-def accessControl(rulesChecker: callable):
+def checkAccess(rulesChecker: callable):
     def inner(request: Request):
         
         token = request.cookies.get(TOKEN_NAME)
@@ -75,10 +75,10 @@ def accessControl(rulesChecker: callable):
 
     return inner
 
-def isAuthorized(subject, request):
+def mustBeAuthorized(subject, request):
     return subject.get('userId', None) is not None
 
-def isNotAuthorized(subject, request):
+def mustBeNotAuthorized(subject, request):
     return subject.get('userId', None) is None
 
 def getJWTPayload(request: Request) -> dict:

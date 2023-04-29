@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException
 from .schemas import *
 from .repo import *
 from .jwt import *
-
+import random
 
 async def getAuthRepo():
 	return MemoAuthRepo()
@@ -23,13 +23,13 @@ async def getAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
 	return UserAttributes() if user is None else UserAttributes.parse_obj(user) 
 
 
-@router.put("/signup", status_code=201, dependencies=[Depends(accessControl(isNotAuthorized))])
+@router.put("/signup", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
 async def signup(signupForm: SignupForm, response: Response,
 				authRepo: AbcAuthRepo = Depends(getAuthRepo), 
 				userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
 
 	try:
-		# todo: транзакция
+		# todo: транзакция/откат
 		user = userRepo.create(name=signupForm.name, isGuest=False)
 		auth = authRepo.create(email=signupForm.email, password=signupForm.password, userId=user.id)
 	except Exception as e:
@@ -42,7 +42,7 @@ async def signup(signupForm: SignupForm, response: Response,
 	return UserAttributes.parse_obj(user)
 
 
-@router.post("/login", dependencies=[Depends(accessControl(isNotAuthorized))])
+@router.post("/login", dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
 async def login(loginForm: LoginForm, response: Response,
 				authRepo: AbcAuthRepo = Depends(getAuthRepo), 
 				userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
@@ -62,7 +62,7 @@ async def login(loginForm: LoginForm, response: Response,
 	return UserAttributes.parse_obj(user)
 
 
-@router.post("/logout", dependencies=[Depends(accessControl(isAuthorized))])
+@router.post("/logout") # , dependencies=[Depends(accessControl(isAuthorized))])
 async def logout(response: Response) -> UserAttributes:
 	cleanTokens(response)
 	return UserAttributes()
@@ -73,12 +73,22 @@ async def refresh(request: Request, response: Response,
 					userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
 	payload = checkRefreshToken(request)
 	user = userRepo.get(payload['userId'])
+	if user is None:
+		raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN,
+            detail="Not authenticated"
+        )
 	# here can add additional data to payload from user attributes
 	payload = {'userId':user.id}
 	setTokens(response = response,  payload = payload)
 	return UserAttributes.parse_obj(user)
 
 
-@router.put("/signup-guest", status_code=201, dependencies=[Depends(accessControl(isNotAuthorized))])
-async def signupGuest() -> UserAttributes:
-	return UserAttributes(id='123')
+@router.put("/signup-guest", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
+async def signupGuest(response: Response, 
+				userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
+	user = userRepo.create(name='guest #' + str(random.randint(100000, 999999)), isGuest=True)
+	# here can add additional data to payload from user attributes
+	payload = {'userId':user.id}
+	setTokens(response = response,  payload = payload)
+	return UserAttributes.parse_obj(user)
