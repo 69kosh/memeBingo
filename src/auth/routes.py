@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, Depends
+from fastapi import APIRouter, Request, Response, Depends
 from fastapi.exceptions import HTTPException
 from .schemas import *
 from .repo import *
@@ -35,8 +35,10 @@ async def signup(signupForm: SignupForm, response: Response,
 	except Exception as e:
 		raise HTTPException(status_code=422, detail=[
 							{'loc': ['body'], 'msg': str(e), 'type': 'create'}])
-	payload = {'userId': user.id}
-	setTokens(response, payload)
+
+	# here can add additional data to payload from user attributes
+	payload = {'userId':user.id}
+	setTokens(response = response,  payload = payload)
 	return UserAttributes.parse_obj(user)
 
 
@@ -54,19 +56,27 @@ async def login(loginForm: LoginForm, response: Response,
 	auth = authRepo.getByEmail(loginForm.email)
 	user = userRepo.get(auth.userId)
 
-	payload = {'userId': user.id}
-	setTokens(response, payload)
+	# here can add additional data to payload from user attributes
+	payload = {'userId':user.id}
+	setTokens(response = response,  payload = payload)
 	return UserAttributes.parse_obj(user)
 
 
 @router.post("/logout", dependencies=[Depends(accessControl(isAuthorized))])
-async def logout(response: Response):
+async def logout(response: Response) -> UserAttributes:
 	cleanTokens(response)
+	return UserAttributes()
 
 
 @router.put("/refresh")
-async def refresh() -> UserAttributes:
-	return UserAttributes(id='123')
+async def refresh(request: Request, response: Response, 
+					userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
+	payload = checkRefreshToken(request)
+	user = userRepo.get(payload['userId'])
+	# here can add additional data to payload from user attributes
+	payload = {'userId':user.id}
+	setTokens(response = response,  payload = payload)
+	return UserAttributes.parse_obj(user)
 
 
 @router.put("/signup-guest", status_code=201, dependencies=[Depends(accessControl(isNotAuthorized))])

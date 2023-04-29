@@ -11,37 +11,52 @@ JWT_SECRET = os.getenv('JWT_SECRET')
 JWT_ALGORITHM = os.getenv('JWT_ALGORITHM')
 JWT_MAXAGE = int(os.getenv('JWT_MAXAGE', 600))
 JWT_REFRESH_MAXAGE = int(os.getenv('JWT_REFRESH_MAXAGE', 24*3600))
+TOKEN_NAME = 'at'
+REFRESH_TOKEN_NAME = 'rt'
 
 def signToken(data: dict, expires: int = 600) -> str:
     payload = data.copy()
-    payload["expires"] = time.time() + expires
+    iat = time.time()
+    payload["iat"] = iat
+    payload["exp"] = iat + expires
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
     return token
-
 
 def decodeToken(token: str) -> dict | None:
     try:
         decodedToken = jwt.decode(
             token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return decodedToken if decodedToken["expires"] >= time.time() else None
+        return decodedToken if decodedToken["exp"] >= time.time() else None
     except:
         return None
 
-def setTokens(response: Response, payload: dict):
+def setTokens(response: Response, payload: dict, refreshPayload: dict = None):
+    refreshPayload = payload if refreshPayload is None else refreshPayload
     token = signToken(payload)
-    refreshToken = signToken(payload, JWT_REFRESH_MAXAGE)
-    response.set_cookie(key="token", value=token, max_age=JWT_MAXAGE, httponly=True)
-    response.set_cookie(key="refreshToken", value=refreshToken, max_age=JWT_REFRESH_MAXAGE, httponly=True)
+    refreshToken = signToken(refreshPayload, JWT_REFRESH_MAXAGE)
+    response.set_cookie(key=TOKEN_NAME, value=token, max_age=JWT_MAXAGE, httponly=True)
+    response.set_cookie(key=REFRESH_TOKEN_NAME, value=refreshToken, max_age=JWT_REFRESH_MAXAGE, httponly=True)
 
 def cleanTokens(response: Response):
-    response.delete_cookie(key="token", httponly=True)
-    response.delete_cookie(key="refreshToken", httponly=True)
+    response.delete_cookie(key=TOKEN_NAME, httponly=True)
+    response.delete_cookie(key=REFRESH_TOKEN_NAME, httponly=True)
+
+def checkRefreshToken(request: Request):
+    refreshToken = request.cookies.get(REFRESH_TOKEN_NAME)
+    payload = decodeToken(refreshToken)
+    if payload is None:
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN,
+            detail="Not authorized"
+        )
+    return payload
+    
 
 def accessControl(rulesChecker: callable):
     def inner(request: Request):
         
-        token = request.cookies.get('token')
+        token = request.cookies.get(TOKEN_NAME)
         payload = decodeToken(token)
         subject = {} if payload is None else payload
         access = rulesChecker(subject=subject, request=dict(request))
@@ -67,7 +82,7 @@ def isNotAuthorized(subject, request):
     return subject.get('userId', None) is None
 
 def getJWTPayload(request: Request) -> dict:
-    token = request.cookies.get('token')
+    token = request.cookies.get(TOKEN_NAME)
     payload = decodeToken(token)
     return {} if payload is None else payload
 
