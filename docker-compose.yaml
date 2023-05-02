@@ -4,11 +4,24 @@ services:
   
   backend:
     build: .
-    command: uvicorn main:app --host 0.0.0.0 --port 8081
+    command: uvicorn main:app --host 0.0.0.0 --port 8080
     environment:
       JWT_SECRET: 12345
       JWT_ALGORITHM: HS256
       JWT_MAXAGE: 600
       JWT_REFRESH_MAXAGE: 2592000
+      MONGODB_URL: mongodb://root:example@mongo:27017
+      PASSWORD_SALT: qwerty
     ports:
-      - 8081:8081
+      - 8080:8080
+
+  mongo:
+    image: mongo
+    restart: always
+    volumes:
+      - ./.db:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017 # remote for prod!

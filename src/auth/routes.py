@@ -1,23 +1,23 @@
 from fastapi import APIRouter, Request, Response, Depends
 from fastapi.exceptions import HTTPException
 from .schemas import *
-from .repo import *
+from .mongoRepo import *
 from .jwt import *
 import random
 
 async def getAuthRepo():
-	return MemoAuthRepo()
+	return AuthRepo()
 
 
 async def getUsersRepo():
-	return MemoUsersRepo()
+	return UsersRepo()
 
 router = APIRouter()
 
 
 @router.get("/attributes")
 async def getAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo), 
-							payload:UserAttributes = Depends(getJWTPayload)) -> UserAttributes:
+							payload:dict = Depends(getJWTPayload)) -> UserAttributes:
 	userId = payload.get('userId', None)
 	user = userRepo.get(userId)
 	return UserAttributes() if user is None else UserAttributes.parse_obj(user) 
@@ -32,9 +32,12 @@ async def signup(signupForm: SignupForm, response: Response,
 		# todo: транзакция/откат
 		user = userRepo.create(name=signupForm.name, isGuest=False)
 		auth = authRepo.create(email=signupForm.email, password=signupForm.password, userId=user.id)
-	except Exception as e:
+	except DuplicateKeyError as e:
 		raise HTTPException(status_code=422, detail=[
-							{'loc': ['body'], 'msg': str(e), 'type': 'create'}])
+							{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
+	except ValueError as e:
+		raise HTTPException(status_code=422, detail=[
+							{'loc': ['body'], 'msg': str(e), 'type': 'validation error'}])
 
 	# here can add additional data to payload from user attributes
 	payload = {'userId':user.id}
