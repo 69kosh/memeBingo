@@ -14,6 +14,7 @@ JWT_REFRESH_MAXAGE = int(os.getenv('JWT_REFRESH_MAXAGE', 24*3600))
 TOKEN_NAME = 'at'
 REFRESH_TOKEN_NAME = 'rt'
 
+
 def signToken(data: dict, expires: int = 600) -> str:
     payload = data.copy()
     iat = time.time()
@@ -23,6 +24,7 @@ def signToken(data: dict, expires: int = 600) -> str:
 
     return token
 
+
 def decodeToken(token: str) -> dict | None:
     try:
         decodedToken = jwt.decode(
@@ -31,16 +33,23 @@ def decodeToken(token: str) -> dict | None:
     except:
         return None
 
+
 def setTokens(response: Response, payload: dict, refreshPayload: dict = None):
     refreshPayload = payload if refreshPayload is None else refreshPayload
     token = signToken(payload)
     refreshToken = signToken(refreshPayload, JWT_REFRESH_MAXAGE)
-    response.set_cookie(key=TOKEN_NAME, value=token, max_age=JWT_MAXAGE, httponly=True, samesite='none', secure=True)
-    response.set_cookie(key=REFRESH_TOKEN_NAME, value=refreshToken, max_age=JWT_REFRESH_MAXAGE, httponly=True, samesite='none', secure=True)
+    response.set_cookie(key=TOKEN_NAME, value=token, max_age=JWT_MAXAGE,
+                        httponly=True)#, samesite='none', secure=True)
+    response.set_cookie(key=REFRESH_TOKEN_NAME, value=refreshToken,
+                        max_age=JWT_REFRESH_MAXAGE, httponly=True)#, samesite='none', secure=True)
+
 
 def cleanTokens(response: Response):
-    response.delete_cookie(key=TOKEN_NAME, httponly=True, samesite='none', secure=True)
-    response.delete_cookie(key=REFRESH_TOKEN_NAME, httponly=True, samesite='none', secure=True)
+    response.delete_cookie(key=TOKEN_NAME, httponly=True,
+                           samesite='none', secure=True)
+    response.delete_cookie(key=REFRESH_TOKEN_NAME,
+                           httponly=True, samesite='none', secure=True)
+
 
 def checkRefreshToken(request: Request):
     refreshToken = request.cookies.get(REFRESH_TOKEN_NAME)
@@ -51,11 +60,11 @@ def checkRefreshToken(request: Request):
             detail="Not authenticated"
         )
     return payload
-    
+
 
 def checkAccess(rulesChecker: callable):
     def inner(request: Request):
-        
+
         token = request.cookies.get(TOKEN_NAME)
         payload = decodeToken(token)
         subject = {} if payload is None else payload
@@ -75,14 +84,16 @@ def checkAccess(rulesChecker: callable):
 
     return inner
 
+
 def mustBeAuthorized(subject, request):
     return subject.get('userId', None) is not None
 
+
 def mustBeNotAuthorized(subject, request):
     return subject.get('userId', None) is None
+
 
 def getJWTPayload(request: Request) -> dict:
     token = request.cookies.get(TOKEN_NAME)
     payload = decodeToken(token)
     return {} if payload is None else payload
-

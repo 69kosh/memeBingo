@@ -3,11 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from memeBingo.routes import router as memeBingoRouter
 from auth.routes import router as authRouter
 
-app = FastAPI()
+app = FastAPI(redoc_url=None)
+
+origins = [ # dev only!
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:8081",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
