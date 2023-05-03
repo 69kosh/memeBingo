@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 class UserAttributes(BaseModel):
     id: str | None
@@ -6,13 +6,10 @@ class UserAttributes(BaseModel):
     name: str | None
 
 class LoginForm(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(min_length=8)
 
 class SignupForm(BaseModel):
-    name: str
-    email: str
-    password: str
-
-class SignupFormResponse(BaseModel):
-	userId: str
+    name: str = Field(min_length=3)
+    email: EmailStr
+    password: str = Field(min_length=8)

@@ -3,6 +3,7 @@ from fastapi.exceptions import HTTPException
 from .schemas import *
 from .mongoRepo import *
 from .jwt import *
+from exceptions import OtherValidationError
 import random
 
 async def getAuthRepo():
@@ -33,11 +34,10 @@ async def signup(signupForm: SignupForm, response: Response,
 		user = userRepo.create(name=signupForm.name, isGuest=False)
 		auth = authRepo.create(email=signupForm.email, password=signupForm.password, userId=user.id)
 	except DuplicateKeyError as e:
-		raise HTTPException(status_code=422, detail=[
-							{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
-	except ValueError as e:
-		raise HTTPException(status_code=422, detail=[
-							{'loc': ['body'], 'msg': str(e), 'type': 'validation error'}])
+		raise OtherValidationError([{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
+	
+	# except ValueError as e:
+	# 	raise OtherValidationError([{'loc': ['body'], 'msg': str(e), 'type': 'model validation error'}])
 
 	# here can add additional data to payload from user attributes
 	payload = {'userId':user.id}
@@ -51,10 +51,7 @@ async def login(loginForm: LoginForm, response: Response,
 				userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
 
 	if not authRepo.checkPassword(loginForm.email, loginForm.password):
-		# TODO: придумать вариант поприличней
-		raise HTTPException(status_code=422, detail=[
-							{'loc': ['body'], 'msg': 'wrong email or password', 'type': 'checkPassword'}])
-
+		raise OtherValidationError([{'loc': ['body'], 'msg': 'Wrong email or password', 'type': 'login'}])
 
 	auth = authRepo.getByEmail(loginForm.email)
 	user = userRepo.get(auth.userId)
