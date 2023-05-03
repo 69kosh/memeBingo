@@ -17,8 +17,8 @@ REFRESH_TOKEN_NAME = 'rt'
 
 def signToken(data: dict, expires: int = 600) -> str:
     payload = data.copy()
-    iat = time.time()
-    payload["iat"] = iat
+    iat = int(time.time())
+    payload["iat"] = iat - 1
     payload["exp"] = iat + expires
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -30,7 +30,7 @@ def decodeToken(token: str) -> dict | None:
         decodedToken = jwt.decode(
             token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return decodedToken if decodedToken["exp"] >= time.time() else None
-    except:
+    except Exception as e:
         return None
 
 
