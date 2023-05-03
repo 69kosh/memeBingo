@@ -9,6 +9,12 @@ origins = [ # dev only!
     "http://localhost",
     "http://localhost:8080",
     "http://localhost:8081",
+    "http://meme1.local",
+    "http://meme1.local:8080",
+    "http://meme1.local:8081",
+    "http://meme2.local",
+    "http://meme2.local:8080",
+    "http://meme2.local:8081",
 ]
 
 app.add_middleware(
