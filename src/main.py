@@ -36,6 +36,6 @@ app.include_router(authRouter, tags=["auth"], prefix='/auth')
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder(exc.errors()),
+        content={'detail': jsonable_encoder(exc.errors())},
     )
 
