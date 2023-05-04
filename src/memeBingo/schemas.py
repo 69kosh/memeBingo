@@ -1,28 +1,28 @@
 from pydantic import BaseModel
 
-class CardView(BaseModel):
+class CardForm(BaseModel):
+    phrases: list[str]
+    title: str 
+    description: str
+    tags: list[str]
+    outlineColor: str
+    textColor: str
+    backgroundColor: str
+    markType: str
+
+class CardView(CardForm):
     id: str
     authorId: str
-    phrases: list[str]
-    title: str 
-    description: str
-    tags: list[str]
-    outlineColor: str
-    textColor: str
-    backgroundColor: str
+    createdAt: int
+    updatedAt: int
+
+
+class GameForm(BaseModel):
+    checkedPhrases: list[int]
     markType: str
-    created: int
-    updated: int
-    
-class CardForm(BaseModel):
-    # id: str
-    # authorId: str
-    phrases: list[str]
-    title: str 
-    description: str
-    tags: list[str]
-    outlineColor: str
-    textColor: str
-    backgroundColor: str
-    markType: str
+
+class GameView(GameForm):
+    id: str
+    cardId: str
+    ownerId: str
 
