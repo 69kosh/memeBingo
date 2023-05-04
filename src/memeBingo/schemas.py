@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 class CardForm(BaseModel):
     phrases: list[str]
@@ -13,8 +14,8 @@ class CardForm(BaseModel):
 class CardView(CardForm):
     id: str
     authorId: str
-    createdAt: int
-    updatedAt: int
+    createdAt: datetime
+    updatedAt: datetime
 
 
 class GameForm(BaseModel):
@@ -25,4 +26,6 @@ class GameView(GameForm):
     id: str
     cardId: str
     ownerId: str
+    createdAt: datetime
+    updatedAt: datetime
 

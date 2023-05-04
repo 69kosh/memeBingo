@@ -5,7 +5,7 @@ from datetime import datetime
 class UserUpdateModel (BaseModel):
 	name: str
 	isGuest: bool = False
-	createdAt: datetime = Field(default_factory=datetime.now)
+	createdAt: datetime = Field(default_factory=datetime.utcnow)
 
 class UserModel (UserUpdateModel):
 	id: str = Field(default_factory=uuid.uuid4, alias="_id")

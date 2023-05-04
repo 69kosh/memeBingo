@@ -42,7 +42,6 @@ async def createCard(userId: str, card: CardForm) -> CardView:
     """ Create new card by owner """
     return CardView()
 
-
 @router.post("/cards/{id}/clone", dependencies=[Depends(checkAccess(mustBeSameUser))])
 async def cloneCard(id: str, userId: str, card: CardForm) -> CardView:
     """ Create new card as clone from existed one """
