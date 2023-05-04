@@ -32,13 +32,10 @@ app.add_middleware(
 app.include_router(memeBingoRouter, tags=["memeBingo"])
 app.include_router(authRouter, tags=["auth"], prefix='/auth')
 
-
-@app.exception_handler(RequestValidationError)
 @app.exception_handler(OtherValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    errors = [{'loc': error.get('loc', [])[-1], 'type': error.get('type'), 'msg': error.get(
-        'msg'), 'feats': error.get('ctx', {})} for error in exc.errors()]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=jsonable_encoder(errors),
+        content=jsonable_encoder(exc.errors()),
     )
+
