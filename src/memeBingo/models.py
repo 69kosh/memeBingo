@@ -16,8 +16,10 @@ class CardUpdateModel(BaseModel):
 class CardModel(CardUpdateModel):
 	id: str = Field(default_factory=uuid.uuid4, alias="_id")
 	authorId: str
+	parentCardId: str | None
 	createdAt: datetime = Field(default_factory=datetime.utcnow)
-	
+	hidden: bool = False
+
 	@validator('id', pre=True, always=True)
 	def id_to_str(cls, v):
 		return str(v)
@@ -32,6 +34,7 @@ class GameModel(GameUpdateModel):
 	cardId: str
 	ownerId: str
 	createdAt: datetime = Field(default_factory=datetime.utcnow)
+	hidden: bool = False
 
 	@validator('id', pre=True, always=True)
 	def id_to_str(cls, v):

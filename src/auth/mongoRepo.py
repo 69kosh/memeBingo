@@ -1,8 +1,6 @@
 from .repo import *
 
 from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
-from bson.binary import UuidRepresentation
 from dotenv import load_dotenv
 import os
 import binascii
