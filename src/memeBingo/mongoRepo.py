@@ -74,27 +74,27 @@ class CardsRepo(AbcCardsRepo):
 class GamesRepo(AbcGamesRepo):
 	
 	def get(self, id: str) -> GameModel:
-		data = gamesCollection.find_one({'_id': id})
+		data = cardsCollection.find_one({'_id': id})
 		if data:
 			return GameModel.parse_obj(data)
 	
 	def getMyGamesByCard(self, cardId: str, ownerId: str) -> list[GameModel]:
-		docs = cardsCollection.find(filter={'cardId': cardId, 'ownerId': ownerId},
+		docs = gamesCollection.find(filter={'cardId': cardId, 'ownerId': ownerId},
 									sort=[("createdAt", -1)])
 		return [GameModel.parse_obj(doc) for doc in docs]
 
 	def create(self, game: GameModel) -> GameModel:
-		res = cardsCollection.insert_one(game.dict(by_alias=True))
+		res = gamesCollection.insert_one(game.dict(by_alias=True))
 		return game if res.inserted_id else None
 	
 	def update(self, id: str, game: GameUpdateModel, conditions: dict = {}) -> bool:
-		res = cardsCollection.update_one(
+		res = gamesCollection.update_one(
 			filter=conditions | {'_id': id}, update={'$set': game.dict()})
 
 		return res.modified_count == 1
 	
 	def hide(self, id: str, conditions: dict = {}):
-		res = cardsCollection.update_one(
+		res = gamesCollection.update_one(
 			filter=conditions | {'_id': id}, update={'$set': {'hidden' : True}})
 
 		return res.modified_count == 1
