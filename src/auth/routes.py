@@ -68,7 +68,7 @@ async def logout(response: Response) -> UserAttributes:
 	return UserAttributes()
 
 
-@router.put("/refresh")
+@router.get("/refresh")
 async def refresh(request: Request, response: Response, 
 					userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
 	payload = checkRefreshToken(request)

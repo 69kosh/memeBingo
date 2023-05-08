@@ -13,17 +13,15 @@ async def getCardsRepo():
 
 
 async def getGamesRepo():
-    return AbcGamesRepo()
+    return GamesRepo()
 
 # TODO: надо как-то убирать эту зависимость
-
-
 async def getUsersRepo():
     return AbcUsersRepo()
 
 
 def mustBeSameUser(subject, request):
-    return subject.get('userId') == request.get('userId')
+    return subject.get('userId') == request.get('userId') if request.get('userId') is not None else False
 
 
 router = APIRouter()
@@ -55,7 +53,7 @@ async def listMyCards(userId: str, cardsRepo: AbcCardsRepo = Depends(getCardsRep
 @router.get("/cards/myGames", dependencies=[Depends(checkAccess(mustBeSameUser))])
 async def listCardsMyGames(userId: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> list[str]:
     """ Return list of cards with my games"""
-    return gamesRepo.findCardsByOwner(authorId=userId)
+    return gamesRepo.findCardsByOwner(ownerId=userId)
 
 
 @router.get("/cards/")
@@ -141,7 +139,7 @@ async def isCardOwner(id: str, userId: str,
 
 
 @router.get("/cards/{id}/canShare")
-async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
                        usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
     """ Check card for share, the card author must not be a guest"""
     try:
@@ -153,8 +151,8 @@ async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
 
 
 @router.get("/games/{id}/canShare")
-async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo), 
-                       cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
+                       cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
                        usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
     """ Check game for share, the card author must not be a guest"""
     try:
@@ -178,7 +176,7 @@ async def getGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> G
 
 
 @router.post("/games/", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def startGame(userId: str, cardId: str, 
+async def startGame(userId: str, cardId: str,
                     gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> GameView:
     """ Start game by card """
     model = GameModel.parse_obj({'authorId': userId, 'cardId': cardId})
@@ -187,7 +185,7 @@ async def startGame(userId: str, cardId: str,
 
 
 @router.put("/games/{id}", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def updateGame(id: str, userId: str, gameForm: GameForm, 
+async def updateGame(id: str, userId: str, gameForm: GameForm,
                      gamesRepo: AbcGamesRepo = Depends(getGamesRepo)):
     """ Update game by owner"""
     model = GameUpdateModel.parse_obj(gameForm.dict())
@@ -215,7 +213,7 @@ async def hideGame(id: str, userId: str, gamesRepo: AbcGamesRepo = Depends(getGa
 
 
 @router.get("/games/byCard/{cardId}", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def listMyGamesOfCard(cardId: str, ownerId: str, 
+async def listMyGamesOfCard(cardId: str, ownerId: str,
                             gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> list[GameView]:
     """ Return list of my games by card"""
     models = gamesRepo.getMyGamesByCard(cardId=cardId, ownerId=ownerId)

@@ -22,7 +22,6 @@ class AbcCardsRepo(ABC):
 class AbcGamesRepo(ABC):
 
     def get(self, id: str) -> GameModel: ...
-    
 
     def create(self, game: GameModel) -> GameModel: ...
 

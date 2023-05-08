@@ -68,7 +68,7 @@ def checkAccess(rulesChecker: callable):
         token = request.cookies.get(TOKEN_NAME)
         payload = decodeToken(token)
         subject = {} if payload is None else payload
-        access = rulesChecker(subject=subject, request=dict(request))
+        access = rulesChecker(subject=subject, request=dict(request.query_params) | request.path_params)
 
         if not access:
             if not (token and payload):
