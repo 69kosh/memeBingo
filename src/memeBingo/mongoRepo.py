@@ -17,7 +17,7 @@ gamesCollection = mongoDb.get_collection('games')
 class CardsRepo(AbcCardsRepo):
 
 	def findByTags(self, tags: list[str], limit: int = 100) -> list[str]:
-		docs = cardsCollection.find(filter={'tags': {'$all': tags}} if len(tags) else None,
+		docs = cardsCollection.find(filter={'tags': {'$all': tags}, 'hidden': False} if len(tags) else None,
 									projection={'_id': 1},
 									sort=[("createdAt", -1)],
 									limit=limit)
@@ -53,7 +53,7 @@ class CardsRepo(AbcCardsRepo):
 
 	def findTagsByTags(self, tags: list[str], limit: int = 100) -> list[str]:
 		result = cardsCollection.aggregate([
-			{'$match': {'tags': {'$all': tags}} if len(tags) else {} },
+			{'$match': {'tags': {'$all': tags}, 'hidden': False} if len(tags) else {'hidden': False} },
 			{'$sort': {'createdAt': -1}},
 			{'$limit': limit },
 			{'$project': { '_id': 0, 'tags': 1 } },
@@ -79,7 +79,7 @@ class GamesRepo(AbcGamesRepo):
 			return GameModel.parse_obj(data)
 	
 	def getMyGamesByCard(self, cardId: str, ownerId: str) -> list[GameModel]:
-		docs = gamesCollection.find(filter={'cardId': cardId, 'ownerId': ownerId},
+		docs = gamesCollection.find(filter={'cardId': cardId, 'ownerId': ownerId, 'hidden': False},
 									sort=[("createdAt", -1)])
 		return [GameModel.parse_obj(doc) for doc in docs]
 
@@ -101,7 +101,7 @@ class GamesRepo(AbcGamesRepo):
 
 	def findCardsByOwner(self, ownerId: str, limit: int = 100) -> list[str]:
 		result = gamesCollection.aggregate([
-			{'$match': {'ownerId': ownerId}},
+			{'$match': {'ownerId': ownerId, 'hidden': False}},
 			{'$group': {'_id': "$cardId", 'lastGame': {'$max': '$createdAt'}}},
 			{'$sort': {'lastGame': -1}},
 			{'$limit': limit },
