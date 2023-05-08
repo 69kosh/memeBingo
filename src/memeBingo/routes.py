@@ -5,6 +5,7 @@ from starlette.status import *
 from auth.jwt import checkAccess
 from .schemas import *
 from .mongoRepo import *
+from auth.mongoRepo import *
 
 
 async def getCardsRepo():
@@ -13,6 +14,12 @@ async def getCardsRepo():
 
 async def getGamesRepo():
     return AbcGamesRepo()
+
+# TODO: надо как-то убирать эту зависимость
+
+
+async def getUsersRepo():
+    return AbcUsersRepo()
 
 
 def mustBeSameUser(subject, request):
@@ -33,8 +40,8 @@ async def listCards(tags: Annotated[list, Query()] = [], limit: int = 20,
 async def listCardsTags(tags: Annotated[list, Query()] = [],
                         cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> list[str]:
     """ Aggregate and return a list of popular tags,
-            according to already selected ones,
-            based on filtered latest cards
+                    according to already selected ones,
+                    based on filtered latest cards
     """
     return cardsRepo.findTagsByTags(tags=tags)
 
@@ -134,15 +141,29 @@ async def isCardOwner(id: str, userId: str,
 
 
 @router.get("/cards/{id}/canShare")
-async def canShareCard(id: str) -> bool:
+async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+                       usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
     """ Check card for share, the card author must not be a guest"""
-    return True
+    try:
+        card = cardsRepo.get(id)
+        user = usersRepo.get(card.authorId)
+        return not user.isGuest
+    except:
+        return False
 
 
 @router.get("/games/{id}/canShare")
-async def canShareGame(id: str) -> bool:
+async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo), 
+                       cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+                       usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
     """ Check game for share, the card author must not be a guest"""
-    return True
+    try:
+        game = gamesRepo.get(id)
+        card = cardsRepo.get(game.cardIdid)
+        user = usersRepo.get(card.authorId)
+        return not user.isGuest
+    except:
+        return False
 
 
 @router.get("/games/{id}")
@@ -157,7 +178,8 @@ async def getGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> G
 
 
 @router.post("/games/", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def startGame(userId: str, cardId: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> GameView:
+async def startGame(userId: str, cardId: str, 
+                    gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> GameView:
     """ Start game by card """
     model = GameModel.parse_obj({'authorId': userId, 'cardId': cardId})
     model = gamesRepo.create(game=model)
@@ -165,7 +187,8 @@ async def startGame(userId: str, cardId: str, gamesRepo: AbcGamesRepo = Depends(
 
 
 @router.put("/games/{id}", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def updateGame(id: str, userId: str, gameForm: GameForm, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)):
+async def updateGame(id: str, userId: str, gameForm: GameForm, 
+                     gamesRepo: AbcGamesRepo = Depends(getGamesRepo)):
     """ Update game by owner"""
     model = GameUpdateModel.parse_obj(gameForm.dict())
     success = gamesRepo.update(id, model, conditions={'ownerId': userId})
@@ -175,7 +198,7 @@ async def updateGame(id: str, userId: str, gameForm: GameForm, gamesRepo: AbcGam
             status_code=HTTP_403_FORBIDDEN,
             detail="Not authorized"
         )
-    model = gamesRepo.get(id=id) # а надо ли оно?
+    model = gamesRepo.get(id=id)  # а надо ли оно?
     return GameView.parse_obj(model.dict())
 
 
@@ -190,8 +213,10 @@ async def hideGame(id: str, userId: str, gamesRepo: AbcGamesRepo = Depends(getGa
             detail="Not authorized"
         )
 
+
 @router.get("/games/byCard/{cardId}", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def listMyGamesOfCard(cardId: str, ownerId: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> list[GameView]:
+async def listMyGamesOfCard(cardId: str, ownerId: str, 
+                            gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> list[GameView]:
     """ Return list of my games by card"""
     models = gamesRepo.getMyGamesByCard(cardId=cardId, ownerId=ownerId)
     return [GameView.parse_obj(model.dict()) for model in models if model is not None]
