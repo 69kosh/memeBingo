@@ -74,7 +74,7 @@ class CardsRepo(AbcCardsRepo):
 class GamesRepo(AbcGamesRepo):
 	
 	def get(self, id: str) -> GameModel:
-		data = cardsCollection.find_one({'_id': id})
+		data = gamesCollection.find_one({'_id': id})
 		if data:
 			return GameModel.parse_obj(data)
 	

@@ -5,7 +5,7 @@ from starlette.status import *
 from auth.jwt import checkAccess
 from .schemas import *
 from .mongoRepo import *
-from auth.mongoRepo import *
+from interchange import getUserAttributes
 
 
 async def getCardsRepo():
@@ -15,9 +15,6 @@ async def getCardsRepo():
 async def getGamesRepo():
 	return GamesRepo()
 
-# TODO: надо как-то убирать эту зависимость
-async def getUsersRepo():
-	return AbcUsersRepo()
 
 
 def mustBeSameUser(subject, request):
@@ -139,12 +136,11 @@ async def isCardOwner(id: str, userId: str,
 
 
 @router.get("/cards/{id}/canShare")
-async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
-					   usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
+async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
 	""" Check card for share, the card author must not be a guest"""
 	try:
 		card = cardsRepo.get(id)
-		user = usersRepo.get(card.authorId)
+		user = getUserAttributes(card.authorId)
 		return not user.isGuest
 	except:
 		return False
@@ -152,13 +148,12 @@ async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
 
 @router.get("/games/{id}/canShare")
 async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
-					   cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
-					   usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
+					   cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
 	""" Check game for share, the card author must not be a guest"""
 	try:
 		game = gamesRepo.get(id)
 		card = cardsRepo.get(game.cardIdid)
-		user = usersRepo.get(card.authorId)
+		user = getUserAttributes(card.authorId)
 		return not user.isGuest
 	except:
 		return False
