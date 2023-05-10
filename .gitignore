@@ -48,3 +48,6 @@ package.nls.*.json
 l10n/
 .db
 .vscode
+coverage.*
+.coverage
+test.bat
