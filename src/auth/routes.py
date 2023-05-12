@@ -35,7 +35,7 @@ async def getAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
 						payload: dict = Depends(getJWTPayload)) -> UserAttributes:
 	userId = payload.get('userId', None)
 	user = userRepo.get(userId)
-	return UserAttributes() if user is None else UserAttributes.parse_obj(user)
+	return UserAttributes(id=userId) if user is None else UserAttributes.parse_obj(user)
 
 
 @router.put("/signup", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
