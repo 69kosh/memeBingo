@@ -13,7 +13,7 @@ class UsersRepo(AbcUsersRepo):
         if data:
             return UserModel.parse_obj(data)
 
-    def create(self, name: str, isGuest = False) -> UserModel:
+    def create(self, name: str, isGuest = False) -> str:
         user = UserModel(name=name, isGuest=isGuest)
         self.collection.insert_one(user.dict(by_alias=True))
         return user.id

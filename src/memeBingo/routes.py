@@ -8,13 +8,24 @@ from .mongoRepo import *
 from interchange import getUserAttributes
 
 
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+PASSWORD_SALT = os.getenv('PASSWORD_SALT')
+MONGODB_URL = os.getenv('MONGODB_URL')
+mongoClient = MongoClient(MONGODB_URL, uuidRepresentation='standard')
+mongoDb = mongoClient.get_database('meme')
+cardsCollection = mongoDb.get_collection('cards')
+gamesCollection = mongoDb.get_collection('games')
+
 async def getCardsRepo():
-	return CardsRepo()
+	return CardsRepo(cardsCollection)
 
 
 async def getGamesRepo():
-	return GamesRepo()
-
+	return GamesRepo(gamesCollection)
 
 
 def mustBeSameUser(subject, request):
