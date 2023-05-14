@@ -169,18 +169,79 @@ def test_findTagsByTagsCard(cardsRepo: AbcCardsRepo):
 
 
 
-# def get(self, id: str) -> CardModel: ...
+def test_createAndUpdateAndHideGame(cardsRepo: AbcCardsRepo, gamesRepo: AbcGamesRepo):
 
-# def gets(self, ids: list[str]) -> list[CardModel]: ...
+	userId = 'qwe123'
 
-# def create(self, card: CardModel) -> CardModel: ...
+	card = CardModel(authorId=userId, phrases=[], title='hello', description='', tags=[],
+					  outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
 
-# def update(self, id: str, card: CardUpdateModel, conditions: dict = {}) -> bool: ...
+	id = cardsRepo.create(card)
 
-# def hide(self, id: str, conditions: dict = {}) -> bool: ...
+	game = GameModel(cardId=id, ownerId=userId)
 
-# def findByTags(self, tags: list[str], limit:int = 100) -> list[str]: ...
+	gameId = gamesRepo.create(game)
 
-# def findTagsByTags(self, tags: list[str], limit:int = 100) -> list[str]: ...
+	assert gameId == game.id
+	assert gameId == gamesRepo.get(gameId).id
+	assert not gamesRepo.get(gameId).hidden
+	assert gamesRepo.update(gameId, GameUpdateModel(checkedPhrases=[1,2,3]))
+	assert gamesRepo.get(gameId).checkedPhrases == [1,2,3]
+	assert not gamesRepo.get(gameId).hidden
+	assert gamesRepo.hide(gameId)
+	assert gamesRepo.get(gameId).hidden
 
-# def findByAuthor(self, authorId: str, limit: int = 100) -> list[str]: ...
+def test_getMyGamesByCard(cardsRepo: AbcCardsRepo, gamesRepo: AbcGamesRepo):
+
+	userId = 'qwe123'
+
+	card = CardModel(authorId=userId, phrases=[], title='hello', description='', tags=[],
+					  outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+
+	cardId = cardsRepo.create(card)
+
+	game1 = GameModel(cardId=cardId, ownerId=userId)
+	game2 = GameModel(cardId=cardId, ownerId=userId)
+	game3 = GameModel(cardId=cardId, ownerId=userId)
+
+	gameId1 = gamesRepo.create(game1)
+	gameId2 = gamesRepo.create(game2)
+	gameId3 = gamesRepo.create(game3)
+	ids = [gameId1, gameId2, gameId3]
+	
+	games = gamesRepo.getMyGamesByCard(cardId, userId)
+	for game in games:
+		assert game.id in ids
+
+def test_findCardsByOwner(cardsRepo: AbcCardsRepo, gamesRepo: AbcGamesRepo):
+
+	userId = 'qwe'
+
+	card1 = CardModel(authorId=userId, phrases=[], title='hello', description='', tags=[],
+					  outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+	cardId1 = cardsRepo.create(card1)
+	game1 = GameModel(cardId=cardId1, ownerId=userId)
+	gameId1 = gamesRepo.create(game1)
+
+	card2 = CardModel(authorId=userId, phrases=[], title='hello', description='', tags=[],
+					  outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+	cardId2 = cardsRepo.create(card2)
+	game2 = GameModel(cardId=cardId2, ownerId=userId)
+	gameId2 = gamesRepo.create(game2)
+
+	card3 = CardModel(authorId=userId, phrases=[], title='hello', description='', tags=[],
+					  outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+	cardId3 = cardsRepo.create(card3)
+	game3 = GameModel(cardId=cardId3, ownerId=userId)
+	gameId3 = gamesRepo.create(game3)
+
+	card4 = CardModel(authorId=userId, phrases=[], title='hello', description='', tags=[],
+					  outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+	cardId4 = cardsRepo.create(card4) # will not found
+
+	ids = [cardId1, cardId2, cardId3]
+	
+	cardIds = gamesRepo.findCardsByOwner(userId)
+
+	for id in cardIds:
+		assert id in ids

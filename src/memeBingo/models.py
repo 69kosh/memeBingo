@@ -26,7 +26,7 @@ class CardModel(CardUpdateModel):
 
 class GameUpdateModel(BaseModel):
 	checkedPhrases: list[int] = Field(default=[])
-	markType: str
+	markType: str | None
 	updatedAt: datetime = Field(default_factory=datetime.utcnow)
 
 class GameModel(GameUpdateModel):
