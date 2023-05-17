@@ -174,7 +174,8 @@ def test_signup():
 	response = client.put(
 		"/auth/signup", json={'email': email, 'name': name, 'password': password})
 	assert response.status_code == 422
-	assert response.json() == {'detail': [{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}]}
+	assert response.json() == {'detail': [{'loc': ['body', 'email'], 
+					'msg': 'Email already exists', 'type': 'dublicate email'}]}
 
 
 
