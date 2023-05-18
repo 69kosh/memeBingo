@@ -6,10 +6,6 @@ class CardForm(BaseModel):
     title: str 
     description: str
     tags: list[str] = Field(default = [])
-    # outlineColor: str
-    # textColor: str
-    # backgroundColor: str
-    # markType: str
     appearance: dict = Field(default = {})
 
 class CardView(CardForm):
@@ -23,7 +19,6 @@ class CardView(CardForm):
 
 class GameForm(BaseModel):
     checkedPhrases: list[int] = Field(default = [])
-    # markType: str
 
 class GameView(GameForm):
     id: str
