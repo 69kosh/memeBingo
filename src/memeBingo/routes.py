@@ -158,6 +158,12 @@ async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo))
 		return not user.isGuest
 	except:
 		return False
+	
+@router.get("/cards/{id}/canEdit")
+async def canEditCard(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> bool:
+	""" Check card for edit, it must not be played """
+	return gamesRepo.getCountByCard(id) == 0
+
 
 
 @router.get("/games/{id}/canShare")
@@ -229,3 +235,5 @@ async def listMyGamesOfCard(cardId: str, userId: str,
 	""" Return list of my games by card"""
 	models = gamesRepo.getMyGamesByCard(cardId=cardId, ownerId=userId)
 	return [GameView.parse_obj(model.dict()) for model in models if model is not None]
+
+

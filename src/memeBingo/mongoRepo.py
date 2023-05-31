@@ -1,10 +1,12 @@
 from .repo import *
 
+from pymongo.collection import Collection
+
 class CardsRepo(AbcCardsRepo):
 	
 	def __init__(self, collection) -> None:
 		super().__init__()
-		self.collection = collection
+		self.collection:Collection = collection
 	
 	def create(self, card: CardModel) -> str | None:
 		res = self.collection.insert_one(card.dict(by_alias=True))
@@ -71,7 +73,7 @@ class CardsRepo(AbcCardsRepo):
 class GamesRepo(AbcGamesRepo):
 	def __init__(self, collection) -> None:
 		super().__init__()
-		self.collection = collection
+		self.collection:Collection = collection
 
 	def get(self, id: str) -> GameModel:
 		data = self.collection.find_one({'_id': id})
@@ -107,3 +109,6 @@ class GamesRepo(AbcGamesRepo):
 			{'$limit': limit }
 		])
 		return [doc['_id'] for doc in result]
+
+	def getCountByCard(self, cardId: str) -> int:
+		return self.collection.count_documents(filter={'cardId': cardId})
