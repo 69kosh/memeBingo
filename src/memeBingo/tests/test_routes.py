@@ -360,6 +360,62 @@ def test_startUpdateAndHideCard():
 	gameIds = [model['id'] for model in models]
 	assert gameId3 in gameIds
 
+	# my games cards
+	response = client.get("/cards/myGames", params={'userId': userId2})
+	assert response.status_code == 200
+	cardIds = response.json()
+	assert cardId in cardIds
+	assert len(cardIds) == 1
+
+	# create card
+	data = {"phrases": [], "title": "string2", "description": "string"}
+	response = client.post("/cards/", params = {'userId':userId2}, json=data )
+	card = response.json()
+	cardId2 = card['id']
+
+	# my games cards same
+	response = client.get("/cards/myGames", params={'userId': userId2})
+	assert response.status_code == 200
+	cardIds = response.json()
+	assert cardId in cardIds
+	assert len(cardIds) == 1
+	
+	# start game userId2 cardid2
+	response = client.post("/games/", params = {'userId':userId2, 'cardId': cardId2} )
+	assert response.status_code == 201
+	game4 = response.json()
+	assert game4['cardId'] == cardId2
+	gameId4 = game4['id']
+
+	# my games cards
+	response = client.get("/cards/myGames", params={'userId': userId2})
+	assert response.status_code == 200
+	cardIds = response.json()
+	assert cardId in cardIds
+	assert cardId2 in cardIds
+	assert len(cardIds) == 2
+
+	#hide card but not game
+	response = client.delete("/cards/" + cardId2, params = {'userId':userId2})
+	assert response.status_code == 200
+
+	# my games cards
+	response = client.get("/cards/myGames", params={'userId': userId2})
+	assert response.status_code == 200
+	cardIds = response.json()
+	assert cardId in cardIds
+	assert len(cardIds) == 1
+
+	#hide game
+	response = client.delete("/games/" + gameId3, params = {'userId':userId2})
+	assert response.status_code == 200
+
+
+	# my games cards
+	response = client.get("/cards/myGames", params={'userId': userId2})
+	assert response.status_code == 200
+	cardIds = response.json()
+	assert len(cardIds) == 0
 
 # unable for testing, cos user needed
 # def test_canShare():

@@ -60,6 +60,12 @@ class CardsRepo(AbcCardsRepo):
 									sort=[("createdAt", -1)],
 									limit=limit)
 		return [doc['_id'] for doc in docs]
+	
+	def filterCardsByHidden(self, cardIds, limit: int = 100) -> list[str]:
+		docs = self.collection.find(filter={'_id':{'$in':cardIds}, 'hidden': False},
+							projection={'_id': 1})
+		ids = [doc['_id'] for doc in docs]
+		return [id for id in cardIds if id in ids]
 
 
 class GamesRepo(AbcGamesRepo):
@@ -98,6 +104,6 @@ class GamesRepo(AbcGamesRepo):
 			{'$match': {'ownerId': ownerId, 'hidden': False}},
 			{'$group': {'_id': "$cardId", 'lastGame': {'$max': '$createdAt'}}},
 			{'$sort': {'lastGame': -1}},
-			{'$limit': limit },
+			{'$limit': limit }
 		])
 		return [doc['_id'] for doc in result]

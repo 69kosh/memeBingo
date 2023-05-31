@@ -60,9 +60,11 @@ async def listMyCards(userId: str, cardsRepo: AbcCardsRepo = Depends(getCardsRep
 
 
 @router.get("/cards/myGames", dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def listCardsMyGames(userId: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> list[str]:
+async def listCardsMyGames(userId: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+			   gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> list[str]:
 	""" Return list of cards with my games"""
-	return gamesRepo.findCardsByOwner(ownerId=userId)
+	ids = gamesRepo.findCardsByOwner(ownerId=userId)
+	return cardsRepo.filterCardsByHidden(ids)
 
 
 @router.get("/cards/")
