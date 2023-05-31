@@ -36,7 +36,7 @@ class CardsRepo(AbcCardsRepo):
 
 
 	def findByTags(self, tags: list[str], limit: int = 100) -> list[str]:
-		docs = self.collection.find(filter={'tags': {'$all': tags}, 'hidden': False} if len(tags) else None,
+		docs = self.collection.find(filter={'tags': {'$all': tags}, 'hidden': False} if len(tags) else {'hidden': False},
 									projection={'_id': 1},
 									sort=[("createdAt", -1)],
 									limit=limit)
@@ -55,7 +55,7 @@ class CardsRepo(AbcCardsRepo):
 		return [doc['_id'] for doc in result]
 
 	def findByAuthor(self, authorId: str, limit: int = 100) -> list[str]:
-		docs = self.collection.find(filter={'authorId': authorId},
+		docs = self.collection.find(filter={'authorId': authorId, 'hidden': False},
 									projection={'_id': 1},
 									sort=[("createdAt", -1)],
 									limit=limit)
