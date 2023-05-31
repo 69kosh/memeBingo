@@ -32,14 +32,14 @@ router = APIRouter()
 
 
 @router.get("/attributes")
-async def getAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
+async def getMyAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
 						payload: dict = Depends(getJWTPayload)) -> UserAttributes:
 	userId = payload.get('userId', None)
 	user = userRepo.get(userId)
 	return UserAttributes(id=userId) if user is None else UserAttributes.parse_obj(user)
 
 @router.get("/attributes/{userId}")
-async def getAttributes(userId: str, userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
+async def getUserAttributes(userId: str, userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
 	user = userRepo.get(userId)
 	if user is None:
 		raise HTTPException(
