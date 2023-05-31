@@ -103,6 +103,16 @@ def test_signup_guest():
 		"name": None,
 	}
 
+	# check attributes
+	response = client.get("/auth/attributes/{userId}".format(userId = attr['id']))
+	assert response.status_code == 200
+	attr2 = response.json()
+	assert attr == attr2
+
+	# check attributes
+	response = client.get("/auth/attributes/123456")
+	assert response.status_code == 404
+
 
 def test_signup():
 

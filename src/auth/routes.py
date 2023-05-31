@@ -3,6 +3,7 @@ from fastapi.exceptions import HTTPException
 from .schemas import *
 from .mongoRepo import *
 from .jwt import *
+from starlette.status import HTTP_404_NOT_FOUND
 from exceptions import OtherValidationError
 import random
 
@@ -36,6 +37,16 @@ async def getAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
 	userId = payload.get('userId', None)
 	user = userRepo.get(userId)
 	return UserAttributes(id=userId) if user is None else UserAttributes.parse_obj(user)
+
+@router.get("/attributes/{userId}")
+async def getAttributes(userId: str, userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
+	user = userRepo.get(userId)
+	if user is None:
+		raise HTTPException(
+			status_code=HTTP_404_NOT_FOUND,
+			detail="Not found"
+		)
+	return UserAttributes.parse_obj(user)
 
 
 @router.put("/signup", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
