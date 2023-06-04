@@ -17,6 +17,14 @@ class UsersRepo(AbcUsersRepo):
         user = UserModel(name=name, isGuest=isGuest)
         self.collection.insert_one(user.dict(by_alias=True))
         return user.id
+    
+    def update(self, id:str, name: str, isGuest = False) -> str:
+        res = self.collection.update_one(
+                filter={'_id': id}, 
+                update={'$set': {'name': name, 'isGuest': isGuest}}
+            )
+
+        return id if res.modified_count == 1 else None
 
 class AuthRepo(AbcAuthRepo):
 

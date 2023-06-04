@@ -49,25 +49,49 @@ async def getUserAttributes(userId: str, userRepo: AbcUsersRepo = Depends(getUse
 	return UserAttributes.parse_obj(user)
 
 
-@router.put("/signup", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
-async def signup(signupForm: SignupForm, response: Response,
+@router.put("/signup", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorizedOrGuest))])
+async def signup(signupForm: SignupForm, request: Request, response: Response,
 				 authRepo: AbcAuthRepo = Depends(getAuthRepo),
 				 userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
-
+	
 	try:
+		payload = checkRefreshToken(request)
+		user = userRepo.get(payload['userId'])
+	except:
+		user = None
+
+	if user is not None and user.isGuest == False:
+		# already authorized
+		raise HTTPException(
+			status_code=HTTP_403_FORBIDDEN,
+			detail="Not authenticated"
+		)
+	
+	if user is not None and user.isGuest == True:
+		# merge user
+		# todo: транзакция/откат	
+		try:
+			authId = authRepo.create(email=signupForm.email,
+								password=signupForm.password, userId=user.id)
+		except DuplicateKeyError as e:
+			raise OtherValidationError(
+				[{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
+		
+		userId = userRepo.update(user.id, name=signupForm.name, isGuest=False)
+	
+	else:
+		# new user
 		# todo: транзакция/откат
 		userId = userRepo.create(name=signupForm.name, isGuest=False)
-		authId = authRepo.create(email=signupForm.email,
-							   password=signupForm.password, userId=userId)
-	except DuplicateKeyError as e:
-		raise OtherValidationError(
-			[{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
-
-	# except ValueError as e:
-	# 	raise OtherValidationError([{'loc': ['body'], 'msg': str(e), 'type': 'model validation error'}])
+		try:
+			authId = authRepo.create(email=signupForm.email,
+								password=signupForm.password, userId=userId)
+		except DuplicateKeyError as e:
+			raise OtherValidationError(
+				[{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
 
 	# here can add additional data to payload from user attributes
-	payload = {'userId': userId}
+	payload = {'userId': userId, 'isGuest': False}
 	setTokens(response=response,  payload=payload)
 	user = userRepo.get(userId)
 	return UserAttributes() if user is None else UserAttributes.parse_obj(user)
@@ -86,7 +110,7 @@ async def login(loginForm: LoginForm, response: Response,
 	user = userRepo.get(auth.userId)
 
 	# here can add additional data to payload from user attributes
-	payload = {'userId': user.id}
+	payload = {'userId': user.id, 'isGuest': False}
 	setTokens(response=response,  payload=payload)
 	return UserAttributes.parse_obj(user)
 
@@ -109,7 +133,7 @@ async def refresh(request: Request, response: Response,
 			detail="Not authenticated"
 		)
 	# here can add additional data to payload from user attributes
-	payload = {'userId': user.id}
+	payload = {'userId': user.id, 'isGuest': False}
 	setTokens(response=response,  payload=payload)
 	return UserAttributes.parse_obj(user)
 
@@ -120,7 +144,7 @@ async def signupGuest(response: Response,
 	id = userRepo.create(
 		name='guest #' + str(random.randint(100000, 999999)), isGuest=True)
 	# here can add additional data to payload from user attributes
-	payload = {'userId': id}
+	payload = {'userId': id, 'isGuest': True}
 	setTokens(response=response,  payload=payload)
 	user = userRepo.get(id)
 	return UserAttributes() if user is None else UserAttributes.parse_obj(user)

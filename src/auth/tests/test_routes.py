@@ -122,6 +122,10 @@ def test_signup():
 	nameInvalid = 'in'
 	password = 'password1'
 	passwordInvalid = 'invalid'
+	email2 = 'fake22@mail.fake'
+	name2 = 'test_user122'
+	password2 = 'password122'
+
 
 	# not registered
 	response = client.get("/auth/attributes")
@@ -188,6 +192,34 @@ def test_signup():
 					'msg': 'Email already exists', 'type': 'dublicate email'}]}
 
 
+	# signup Guest
+	response = client.put("/auth/signup-guest")
+	assert response.status_code == 201
+	attr = response.json()
+	assert re.match(
+		"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", attr['id']) is not None
+	assert attr['isGuest']
+	assert re.match("guest #[0-9]{6}", attr['name']) is not None
+
+	# signup dublicate email
+	response = client.put(
+		"/auth/signup", json={'email': email, 'name': name, 'password': password})
+	assert response.status_code == 422
+	assert response.json() == {'detail': [{'loc': ['body', 'email'], 
+					'msg': 'Email already exists', 'type': 'dublicate email'}]}
+
+	# signup over guest
+	response = client.put(
+		"/auth/signup", json={'email': email2, 'name': name2, 'password': password2})
+	assert response.status_code == 201
+	attr2 = response.json()
+	assert attr2['id'] == attr['id']
+	assert attr2['isGuest'] == False
+	assert attr2['name'] == name2
+
+	# logout
+	response = client.post("/auth/logout")
+	assert response.status_code == 200
 
 def test_login():
 

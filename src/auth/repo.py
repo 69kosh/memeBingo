@@ -8,6 +8,8 @@ class AbcUsersRepo(ABC):
 
     def create(self, name: str, isGuest=False) -> str: ...
 
+    def update(self, id:str, name: str, isGuest=False) -> str: ...
+
 
 class AbcAuthRepo(ABC):
 
