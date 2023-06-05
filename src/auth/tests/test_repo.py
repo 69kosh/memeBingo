@@ -41,6 +41,19 @@ def test_createUser(usersRepo:AbcUsersRepo):
 	assert user is not None
 	assert user.name == 'guest123456'
 
+def test_upateUser(usersRepo:AbcUsersRepo):
+
+	id = usersRepo.create('user2', False)
+	user = usersRepo.get(id)
+	assert user is not None
+	assert user.name == 'user2'
+
+	id = usersRepo.update(id, 'user22222', True)
+	user = usersRepo.get(id)
+	assert user is not None
+	assert user.name == 'user22222'
+	assert user.isGuest == True
+
 def test_createAuth(authRepo:AbcAuthRepo):
 	assert authRepo.getByEmail('not-existed@email.fake') is None
 

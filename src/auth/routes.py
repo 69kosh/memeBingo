@@ -60,13 +60,6 @@ async def signup(signupForm: SignupForm, request: Request, response: Response,
 	except:
 		user = None
 
-	if user is not None and user.isGuest == False:
-		# already authorized
-		raise HTTPException(
-			status_code=HTTP_403_FORBIDDEN,
-			detail="Not authenticated"
-		)
-	
 	if user is not None and user.isGuest == True:
 		# merge user
 		# todo: транзакция/откат	
