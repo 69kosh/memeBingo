@@ -16,7 +16,7 @@ import os
 from io import BytesIO
 from os import getcwd
 
-basePath = getcwd() + "/../"
+basePath = getcwd()
 
 load_dotenv()
 PASSWORD_SALT = os.getenv('PASSWORD_SALT')
@@ -35,8 +35,8 @@ async def getGamesRepo():
 	return GamesRepo(gamesCollection)
 
 async def getImagesGenerator():
-	# print('Awaiting font file: ' + basePath + "assets/Roboto-Regular.ttf")
-	return ImagesGenerator(font = basePath + "assets/Roboto-Regular.ttf")
+	print('Awaiting font file: ' + basePath + "/assets/Roboto-Regular.ttf")
+	return ImagesGenerator(font = basePath + "/assets/Roboto-Regular.ttf")
 
 
 def mustBeSameUser(subject, request):

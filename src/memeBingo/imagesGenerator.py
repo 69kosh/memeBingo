@@ -143,7 +143,7 @@ I went to Spain to study the language and culture.
 	PATH_FILES = getcwd() + "/"
 	print(PATH_FILES)
 
-	gen = ImagesGenerator(font = PATH_FILES + "assets/Roboto-Regular.ttf" )
+	gen = ImagesGenerator(font = PATH_FILES + "src/assets/Roboto-Regular.ttf" )
 	model = CardModel(phrases=phrases.split('\n'), title='qweasd', description='', tags = [], authorId='123', 
 					  appearance={'backgroundColor':'#5300eb', 'textColor':'#bed3f3', 'tilesColor':  '#db3e00'})
 	img = gen.getCardPNG(model)
