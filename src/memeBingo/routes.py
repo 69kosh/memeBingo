@@ -1,16 +1,19 @@
 from typing import Annotated
 from fastapi import APIRouter, Query, Depends
+from starlette.responses import StreamingResponse
 from fastapi.security.http import *
+import io
 from starlette.status import *
 from auth.jwt import checkAccess
 from .schemas import *
 from .mongoRepo import *
 from interchange import getUserAttributes
-
+from .imagesGenerator import ImagesGenerator
 
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
+from io import BytesIO
 
 load_dotenv()
 PASSWORD_SALT = os.getenv('PASSWORD_SALT')
@@ -27,6 +30,9 @@ async def getCardsRepo():
 
 async def getGamesRepo():
 	return GamesRepo(gamesCollection)
+
+async def getImagesGenerator():
+	return ImagesGenerator()
 
 
 def mustBeSameUser(subject, request):
@@ -237,3 +243,21 @@ async def listMyGamesOfCard(cardId: str, userId: str,
 	return [GameView.parse_obj(model.dict()) for model in models if model is not None]
 
 
+@router.get("/cards/{id}/image")
+async def getCard(id: str, size: str = 'full', withTitle: bool = False,
+		  cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
+		  imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
+	model = cardsRepo.get(id)
+	if model is None:
+		raise HTTPException(
+			status_code=HTTP_404_NOT_FOUND,
+			detail="Not found"
+		)
+	
+	image = imagesGenerator.getCardPNG(card = model, size = size, withTitle = withTitle)
+
+	bytes = BytesIO()
+	image.save(bytes, "PNG")
+	bytes.seek(0)
+
+	return StreamingResponse(bytes, media_type="image/png")
