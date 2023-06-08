@@ -66,9 +66,9 @@ class ImagesGenerator:
 		image = Image.new('RGB', self._cardSizeWithTitle if withTitle else self._cardSizeWithoutTitle, bgColor)
 		draw = ImageDraw.Draw(image)
 
-		tileColor = (int(card.appearance['tileColor'][1:3], 16), 
-						int(card.appearance['tileColor'][3:5], 16), 
-						int(card.appearance['tileColor'][5:7], 16))
+		tileColor = (int(card.appearance['tilesColor'][1:3], 16), 
+						int(card.appearance['tilesColor'][3:5], 16), 
+						int(card.appearance['tilesColor'][5:7], 16))
 		
 		textColor = (int(card.appearance['textColor'][1:3], 16), 
 						int(card.appearance['textColor'][3:5], 16), 
@@ -139,7 +139,7 @@ I went to Spain to study the language and culture.
 
 	gen = ImagesGenerator()#phrases.split('\n')
 	model = CardModel(phrases=[], title='qweasd', description='', tags = [], authorId='123', 
-					  appearance={'backgroundColor':'#5300eb', 'textColor':'#bed3f3', 'tileColor':  '#db3e00'})
+					  appearance={'backgroundColor':'#5300eb', 'textColor':'#bed3f3', 'tilesColor':  '#db3e00'})
 	img = gen.getCardPNG(model)
 	img.show('asdasd')
 	img.save('img.png')
