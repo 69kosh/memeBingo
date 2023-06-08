@@ -55,6 +55,9 @@ class ImagesGenerator:
 	_fontSizes = [(27, 18, 3), (45, 14, 3), (100500, 12, 4)]
 	_roundness = 8
 
+	def __init__(self, font) -> None:
+		self._font = font
+
 	def getCardPNG(self, card:CardModel, size:str = 'full', withTitle:bool = False):
 
 		phrases = dict(enumerate(card.phrases))
@@ -93,7 +96,7 @@ class ImagesGenerator:
 			x = self._cardPadding[0] + (i % 5) * (self._tileSize[0] + self._tileMargin[0]) + self._tilePadding[0]
 			y = self._cardPadding[1] + (i // 5) * (self._tileSize[1] + self._tileMargin[1]) + self._tilePadding[1]
 			fontSize = [t for t in self._fontSizes if len(phrases.get(i, '')) < t[0]][0]
-			font = ImageFont.truetype(font="assets/Roboto-Regular.ttf", size=fontSize[1])
+			font = ImageFont.truetype(font=self._font, size=fontSize[1])
 			inner = self._tileSize[0] - 2 * self._tilePadding[0]
 			wraped = "\n".join(wrap(draw = draw, text = phrases.get(i, ''), width = inner, font=font))
 			bbox = draw.multiline_textbbox((0, 0), wraped, font=font, align='center')
@@ -136,9 +139,12 @@ The company decided to reduce hours for everyone.
 To donate time or money is an honorable thing.
 I went to Spain to study the language and culture.
 '''
+	from os import getcwd
+	PATH_FILES = getcwd() + "/"
+	print(PATH_FILES)
 
-	gen = ImagesGenerator()#phrases.split('\n')
-	model = CardModel(phrases=[], title='qweasd', description='', tags = [], authorId='123', 
+	gen = ImagesGenerator(font = PATH_FILES + "assets/Roboto-Regular.ttf" )
+	model = CardModel(phrases=phrases.split('\n'), title='qweasd', description='', tags = [], authorId='123', 
 					  appearance={'backgroundColor':'#5300eb', 'textColor':'#bed3f3', 'tilesColor':  '#db3e00'})
 	img = gen.getCardPNG(model)
 	img.show('asdasd')

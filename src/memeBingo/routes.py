@@ -14,6 +14,9 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 from io import BytesIO
+from os import getcwd
+
+basePath = getcwd() + "/../"
 
 load_dotenv()
 PASSWORD_SALT = os.getenv('PASSWORD_SALT')
@@ -32,7 +35,8 @@ async def getGamesRepo():
 	return GamesRepo(gamesCollection)
 
 async def getImagesGenerator():
-	return ImagesGenerator()
+	# print('Awaiting font file: ' + basePath + "assets/Roboto-Regular.ttf")
+	return ImagesGenerator(font = basePath + "assets/Roboto-Regular.ttf")
 
 
 def mustBeSameUser(subject, request):
@@ -40,7 +44,6 @@ def mustBeSameUser(subject, request):
 
 
 router = APIRouter()
-
 
 @router.get("/cards")
 async def listCards(tags: Annotated[list, Query()] = [], limit: int = 20,
