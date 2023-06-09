@@ -1,7 +1,8 @@
 
 from .models import CardModel
 import re
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from typing import Literal
 
 def wrap(draw: ImageDraw.ImageDraw, text: str, width: int, font:ImageFont):
 	''' Каждый раз наращиваем строку пословно, 
@@ -58,39 +59,101 @@ class ImagesGenerator:
 	def __init__(self, font) -> None:
 		self._font = font
 
-	def getCardPNG(self, card:CardModel, size:str = 'full', withTitle:bool = False):
+	def getCardPNG(self, card:CardModel, size:Literal['full','small'] = 'full', withTitle:bool = False):
 
 		phrases = dict(enumerate(card.phrases))
 
+		resize = 2
+
+		tileImage = Image.new('RGBA', (resize *(self._tileSize[0] + self._tileMargin[0] * 2), 
+				 						resize * (self._tileSize[1] + self._tileMargin[1] * 2)), (0, 0, 0, 0))
+		tileDraw = ImageDraw.Draw(tileImage)
+
+		shadowColor = (0,0,0,50)
+
+		x = resize * (self._tileMargin[0])
+		y = resize * (self._tileMargin[1] + 2)
+
+		tileDraw.pieslice((x, y, 
+							x + resize * (self._roundness*2), 
+							y + resize * (self._roundness*2)), 
+							start=180, end=270, fill=shadowColor)
+		tileDraw.pieslice((x, y + resize * (self._tileSize[0] - self._roundness*2), 
+							x + resize * (self._roundness*2), 
+							y + resize * (self._tileSize[0])), 
+							start=90, end=180, fill=shadowColor)
+
+		tileDraw.pieslice((x + resize * (self._tileSize[0] - self._roundness*2), y, 
+							x + resize * (self._tileSize[0]), 
+							y + resize * (self._roundness*2)), 
+							start=270, end=0, fill=shadowColor)
+		tileDraw.pieslice((x + resize * (self._tileSize[0] - self._roundness*2), y + resize * (self._tileSize[0] - self._roundness*2), 
+							x + resize * (self._tileSize[0]), 
+							y + resize * (self._tileSize[0])), 
+							start=0, end=90, fill=shadowColor)
+
+		tileDraw.rectangle((x + resize * (self._roundness), y, 
+							x + resize * (self._tileSize[0] - self._roundness), y + resize * (self._tileSize[0])), 
+							fill=shadowColor)
+		tileDraw.rectangle((x, y + resize * (self._roundness), 
+							x + resize * (self._tileSize[0]), y + resize * (self._tileSize[0] - self._roundness)), 
+							fill=shadowColor)
+
+		tileImage = tileImage.filter(ImageFilter.GaussianBlur(resize))
+		tileDraw = ImageDraw.Draw(tileImage)
+
+		tileColor = (int(card.appearance['tilesColor'][1:3], 16), 
+						int(card.appearance['tilesColor'][3:5], 16), 
+						int(card.appearance['tilesColor'][5:7], 16), 255)
+		
+		y = self._tileMargin[1]
+
+		tileDraw.pieslice((x, y, 
+							x + resize * (self._roundness*2), 
+							y + resize * (self._roundness*2)), 
+							start=180, end=270, fill=tileColor)
+		tileDraw.pieslice((x, y + resize * (self._tileSize[0] - self._roundness*2), 
+							x + resize * (self._roundness*2), 
+							y + resize * (self._tileSize[0])), 
+							start=90, end=180, fill=tileColor)
+
+		tileDraw.pieslice((x + resize * (self._tileSize[0] - self._roundness*2), y, 
+							x + resize * (self._tileSize[0]), 
+							y + resize * (self._roundness*2)), 
+							start=270, end=0, fill=tileColor)
+		tileDraw.pieslice((x + resize * (self._tileSize[0] - self._roundness*2), y + resize * (self._tileSize[0] - self._roundness*2), 
+							x + resize * (self._tileSize[0]), 
+							y + resize * (self._tileSize[0])), 
+							start=0, end=90, fill=tileColor)
+
+		tileDraw.rectangle((x + resize * (self._roundness), y, 
+							x + resize * (self._tileSize[0] - self._roundness), y + resize * (self._tileSize[0])), 
+							fill=tileColor)
+		tileDraw.rectangle((x, y + resize * (self._roundness), 
+							x + resize * (self._tileSize[0]), y + resize * (self._tileSize[0] - self._roundness)), 
+							fill=tileColor)
+
+		tileImage = tileImage.resize(((self._tileSize[0] + self._tileMargin[0] * 2), 
+				 						(self._tileSize[1] + self._tileMargin[1] * 2)), Image.BILINEAR)
+
+	
 		bgColor = (int(card.appearance['backgroundColor'][1:3], 16), 
 					int(card.appearance['backgroundColor'][3:5], 16), 
 					int(card.appearance['backgroundColor'][5:7], 16))
 		
-		image = Image.new('RGB', self._cardSizeWithTitle if withTitle else self._cardSizeWithoutTitle, bgColor)
+		image = Image.new('RGBA', self._cardSizeWithTitle if withTitle else self._cardSizeWithoutTitle, bgColor)
 		draw = ImageDraw.Draw(image)
 
-		tileColor = (int(card.appearance['tilesColor'][1:3], 16), 
-						int(card.appearance['tilesColor'][3:5], 16), 
-						int(card.appearance['tilesColor'][5:7], 16))
 		
 		textColor = (int(card.appearance['textColor'][1:3], 16), 
 						int(card.appearance['textColor'][3:5], 16), 
 						int(card.appearance['textColor'][5:7], 16))
 
-
 		for i in range(25):
 			x = self._cardPadding[0] + (i % 5) * (self._tileSize[0] + self._tileMargin[0])
 			y = self._cardPadding[1] + (i // 5) * (self._tileSize[1] + self._tileMargin[1])
 
-			draw.pieslice((x, y, x + self._roundness*2, y + self._roundness*2), start=180, end=270, fill=tileColor)
-			draw.pieslice((x, y + self._tileSize[0] - self._roundness*2, x + self._roundness*2, y + self._tileSize[0]), start=90, end=180, fill=tileColor)
-
-			draw.pieslice((x + self._tileSize[0] - self._roundness*2, y, x + self._tileSize[0], y + self._roundness*2), start=270, end=0, fill=tileColor)
-			draw.pieslice((x + self._tileSize[0] - self._roundness*2, y + self._tileSize[0] - self._roundness*2, x + self._tileSize[0], y + self._tileSize[0]), start=0, end=90, fill=tileColor)
-
-			draw.rectangle((x + self._roundness, y, x + self._tileSize[0] - self._roundness, y + self._tileSize[0]), fill=tileColor)
-			draw.rectangle((x, y + self._roundness, x + self._tileSize[0], y + self._tileSize[0] - self._roundness), fill=tileColor)
-
+			image.alpha_composite(tileImage, (x - self._tileMargin[0], y - self._tileMargin[1]))
 
 		for i in range(25):
 			x = self._cardPadding[0] + (i % 5) * (self._tileSize[0] + self._tileMargin[0]) + self._tilePadding[0]
@@ -102,6 +165,9 @@ class ImagesGenerator:
 			bbox = draw.multiline_textbbox((0, 0), wraped, font=font, align='center')
 			# print(bbox)
 			draw.multiline_text((x + (inner - bbox[2])//2, y + (inner - bbox[3])//2), wraped, font=font, align='center', fill=textColor)
+
+		if size == 'small':
+			image = image.resize((244,244), Image.BILINEAR)
 
 		return image
 

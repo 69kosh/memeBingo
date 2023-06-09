@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Depends
 from starlette.responses import StreamingResponse
 from fastapi.security.http import *
-import io
+from typing import Literal
 from starlette.status import *
 from auth.jwt import checkAccess
 from .schemas import *
@@ -35,7 +35,7 @@ async def getGamesRepo():
 	return GamesRepo(gamesCollection)
 
 async def getImagesGenerator():
-	print('Awaiting font file: ' + basePath + "/assets/Roboto-Regular.ttf")
+	# print('Awaiting font file: ' + basePath + "/assets/Roboto-Regular.ttf")
 	return ImagesGenerator(font = basePath + "/assets/Roboto-Regular.ttf")
 
 
@@ -247,7 +247,7 @@ async def listMyGamesOfCard(cardId: str, userId: str,
 
 
 @router.get("/cards/{id}/image")
-async def getCard(id: str, size: str = 'full', withTitle: bool = False,
+async def getCard(id: str, size: Literal['full', 'small'] = 'full', withTitle: bool = False,
 		  cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
 		  imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
 	model = cardsRepo.get(id)
