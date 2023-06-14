@@ -36,7 +36,7 @@ async def getGamesRepo():
 
 async def getImagesGenerator():
 	# print('Awaiting font file: ' + basePath + "/assets/Roboto-Regular.ttf")
-	return ImagesGenerator(font = basePath + "/assets/Roboto-Regular.ttf")
+	return ImagesGenerator(assetsDir=basePath + "/assets/")
 
 
 def mustBeSameUser(subject, request):
