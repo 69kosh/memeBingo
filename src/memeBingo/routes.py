@@ -247,17 +247,46 @@ async def listMyGamesOfCard(cardId: str, userId: str,
 
 
 @router.get("/cards/{id}/image")
-async def getCard(id: str, size: Literal['full', 'small'] = 'full', withTitle: bool = False,
+async def getCardImage(id: str, size: Literal['full', 'small'] = 'full', withTitle: bool = False,
 		  cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
 		  imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
-	model = cardsRepo.get(id)
-	if model is None:
+	card = cardsRepo.get(id)
+	if card is None:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
 			detail="Not found"
 		)
 	
-	image = imagesGenerator.getCardPNG(card = model, size = size, withTitle = withTitle)
+	image = imagesGenerator.getCardImage(card = card, size = size, withTitle = withTitle)
+
+	bytes = BytesIO()
+	image.save(bytes, "PNG")
+	bytes.seek(0)
+
+	return StreamingResponse(bytes, media_type="image/png")
+
+
+@router.get("/games/{id}/image")
+async def getGameImage(id: str, size: Literal['full', 'small'] = 'full', withTitle: bool = False,
+		  cardsRepo: AbcCardsRepo = Depends(getCardsRepo), gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
+		  imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
+	
+
+	game = gamesRepo.get(id)
+	if game is None:
+		raise HTTPException(
+			status_code=HTTP_404_NOT_FOUND,
+			detail="Not found"
+		)
+
+	card = cardsRepo.get(game.cardId)
+	if card is None:
+		raise HTTPException(
+			status_code=HTTP_404_NOT_FOUND,
+			detail="Not found"
+		)
+	
+	image = imagesGenerator.getGameImage(card = card, game = game, size = size, withTitle = withTitle)
 
 	bytes = BytesIO()
 	image.save(bytes, "PNG")
