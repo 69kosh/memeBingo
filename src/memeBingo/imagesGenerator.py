@@ -178,7 +178,7 @@ class ImagesGenerator:
 	def getCheckImage(self, checkColor, tileSizeX = 117, tileSizeY = 117, tilePaddingX = 5, tilePaddingY=5):
 		color = Image.new('RGBA', (tileSizeX - tilePaddingX*2, tileSizeY - tilePaddingY * 2), checkColor)
 
-		mask = Image.open(self._assetsDir + "tick-icon.png").convert('RGBA').resize(
+		mask = Image.open(self._assetsDir + "tileX1.png").convert('RGBA').resize(
 			(tileSizeX - tilePaddingX*2, tileSizeY - tilePaddingY * 2), Image.BILINEAR).getchannel('A')
 		
 		mask = Image.eval(mask, (lambda x: x * 0.5))
