@@ -63,7 +63,7 @@ class ImagesGenerator:
 	
 	def getTileImage(self, tileColor, resize:float = 2, roundness = 8, tileSizeX = 117, tileSizeY = 117, tileMarginX = 6, tileMarginY = 6):
 
-		resize = 3
+		resize = 2
 
 		tileImage = Image.new('RGBA', (resize * (tileSizeX + tileMarginX * 2), 
 				 						resize * (tileSizeY + tileMarginY * 2)), (0, 0, 0, 0))
@@ -101,29 +101,33 @@ class ImagesGenerator:
 		y = resize * tileMarginY
 
 		tileDraw.pieslice((x, y, 
-							x + resize * (roundness*2), y + resize * (roundness*2)), 
+							x + resize * (roundness*2) + 1, y + resize * (roundness*2) + 1) , 
 							start=180, end=270, fill=tileColor)
 		tileDraw.pieslice((x, y + resize * (tileSizeX - roundness*2), 
-							x + resize * (roundness*2), y + resize * (tileSizeY)), 
+							x + resize * (roundness*2) + 1, y + resize * (tileSizeY) + 1), 
 							start=90, end=180, fill=tileColor)
 
 		tileDraw.pieslice((x + resize * (tileSizeX - roundness*2), y, 
-							x + resize * (tileSizeX), y + resize * (roundness*2)), 
+							x + resize * (tileSizeX) + 1, y + resize * (roundness*2) + 1), 
 							start=270, end=0, fill=tileColor)
 		tileDraw.pieslice((x + resize * (tileSizeX - roundness*2), y + resize * (tileSizeY - roundness*2), 
-							x + resize * (tileSizeX), y + resize * (tileSizeY)), 
+							x + resize * (tileSizeX) + 1, y + resize * (tileSizeY) + 1), 
 							start=0, end=90, fill=tileColor)
 
 		tileDraw.rectangle((x + resize * (roundness), y, 
-							x + resize * (tileSizeX - roundness), y + resize * (tileSizeY)), 
+							x + resize * (tileSizeX - roundness) + 1, y + resize * (tileSizeY) + 1), 
 							fill=tileColor)
 		tileDraw.rectangle((x, y + resize * (roundness), 
-							x + resize * (tileSizeX), y + resize * (tileSizeY - roundness)), 
+							x + resize * (tileSizeX) + 1, y + resize * (tileSizeY - roundness) + 1), 
 							fill=tileColor)
 
+		tileImage.show()
+
 		tileImage = tileImage.resize(((tileSizeX + tileMarginX * 2), 
-				 						(tileSizeY + tileMarginY * 2)), Image.BILINEAR)
+				 						(tileSizeY + tileMarginY * 2)), Image.BOX)
 	
+		tileImage.show()
+
 		return tileImage
 	
 	def parseColor(self, color:str):
