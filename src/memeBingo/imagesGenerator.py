@@ -121,12 +121,10 @@ class ImagesGenerator:
 							x + resize * (tileSizeX) + 1, y + resize * (tileSizeY - roundness) + 1), 
 							fill=tileColor)
 
-		tileImage.show()
 
 		tileImage = tileImage.resize(((tileSizeX + tileMarginX * 2), 
 				 						(tileSizeY + tileMarginY * 2)), Image.BOX)
 	
-		tileImage.show()
 
 		return tileImage
 	
