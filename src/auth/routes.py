@@ -90,7 +90,7 @@ async def signup(signupForm: SignupForm, request: Request, response: Response,
 	return UserAttributes() if user is None else UserAttributes.parse_obj(user)
 
 
-@router.post("/login", dependencies=[Depends(checkAccess(mustBeNotAuthorized))])
+@router.post("/login", dependencies=[Depends(checkAccess(mustBeNotAuthorizedOrGuest))])
 async def login(loginForm: LoginForm, response: Response,
 				authRepo: AbcAuthRepo = Depends(getAuthRepo),
 				userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:

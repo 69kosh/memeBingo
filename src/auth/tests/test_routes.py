@@ -303,7 +303,24 @@ def test_login():
 		"isGuest": None,
 		"name": None,
 	}
-	
+
+	# signup guest
+	response = client.put("/auth/signup-guest")
+	assert response.status_code == 201
+
+	# login
+	response = client.post(
+		"/auth/login", json={'email': email, 'password': password})
+	assert response.status_code == 200
+	attr = response.json()
+	assert re.match(
+		"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", attr['id']) is not None
+	assert not attr['isGuest']
+	assert attr['name'] == name
+
+	# logout
+	response = client.post("/auth/logout")
+	assert response.status_code == 200
 
 def test_refresh():
 
