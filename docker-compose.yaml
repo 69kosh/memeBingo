@@ -1,7 +1,7 @@
 version: '3.3'
 
 services:
-  
+
   backend:
     build: .
     command: uvicorn main:app --host 0.0.0.0 --port 8080
@@ -14,7 +14,7 @@ services:
       PASSWORD_SALT: qwerty
     ports:
       - 8080:8080
-
+      
   mongo:
     image: mongo
     restart: always
@@ -25,3 +25,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     ports:
       - 27017:27017 # remote for prod!
+
+  gateway:
+    build: ./nginx
+    ports:
+        - 80:80
