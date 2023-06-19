@@ -94,6 +94,17 @@ async def getCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> C
 		)
 	return CardView.parse_obj(model.dict())
 
+# @router.get("/cards/{id}/canView")
+# async def canCardView(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
+# 	''' Check if card not hide and author of card is not guest or author is current user'''
+# 	model = cardsRepo.get(id)
+# 	if model is None:
+# 		raise HTTPException(
+# 			status_code=HTTP_404_NOT_FOUND,
+# 			detail="Not found"
+# 		)
+# 	return CardView.parse_obj(model.dict())
+
 
 @router.post("/cards/", status_code=201, dependencies=[Depends(checkAccess(mustBeSameUser))])
 async def createCard(userId: str, card: CardForm,
@@ -246,28 +257,30 @@ async def listMyGamesOfCard(cardId: str, userId: str,
 	return [GameView.parse_obj(model.dict()) for model in models if model is not None]
 
 
-@router.get("/cards/{id}/image")
-async def getCardImage(id: str, size: Literal['full', 'small'] = 'full', withTitle: bool = False,
-		  cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
-		  imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
+@router.get("/cards/{id}/image-{withTitle}-{size}.{type}")
+async def getCardImage(id: str, size: Literal['full', 'small'] = 'full', 
+		       withTitle: Literal['untitled', 'titled'] = 'untitled', type: Literal['png', 'jpeg'] = 'png', 
+			   cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
+			   imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
 	card = cardsRepo.get(id)
 	if card is None:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
-			detail="Not found"
 		)
 	
-	image = imagesGenerator.getCardImage(card = card, size = size, withTitle = withTitle)
+	image = imagesGenerator.getCardImage(card = card, size = size, withTitle = withTitle == 'titled')
 
 	bytes = BytesIO()
-	image.save(bytes, "PNG")
+	image = image.convert('RGB')
+	image.save(bytes, type)
 	bytes.seek(0)
 
-	return StreamingResponse(bytes, media_type="image/png")
+	return StreamingResponse(bytes, media_type="image/" + type)
 
 
-@router.get("/games/{id}/image")
-async def getGameImage(id: str, size: Literal['full', 'small'] = 'full', withTitle: bool = False,
+@router.get("/games/{id}/image-{withTitle}-{size}.{type}")
+async def getGameImage(id: str, size: Literal['full', 'small'] = 'full', 
+		       withTitle: Literal['untitled', 'titled'] = 'untitled', type: Literal['png', 'jpeg'] = 'png', 
 		  cardsRepo: AbcCardsRepo = Depends(getCardsRepo), gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
 		  imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
 	
@@ -276,20 +289,19 @@ async def getGameImage(id: str, size: Literal['full', 'small'] = 'full', withTit
 	if game is None:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
-			detail="Not found"
 		)
 
 	card = cardsRepo.get(game.cardId)
 	if card is None:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
-			detail="Not found"
 		)
 	
-	image = imagesGenerator.getGameImage(card = card, game = game, size = size, withTitle = withTitle)
+	image = imagesGenerator.getGameImage(card = card, game = game, size = size, withTitle = withTitle == 'titled')
 
 	bytes = BytesIO()
-	image.save(bytes, "PNG")
+	image = image.convert('RGB')
+	image.save(bytes, type)
 	bytes.seek(0)
 
-	return StreamingResponse(bytes, media_type="image/png")
+	return StreamingResponse(bytes, media_type="image/" + type)
