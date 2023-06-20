@@ -65,12 +65,8 @@ def test_signup_guest():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
+
 	# signup
 	response = client.put("/auth/signup-guest")
 	assert response.status_code == 201
@@ -96,12 +92,7 @@ def test_signup_guest():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
 
 	# check attributes
 	response = client.get("/auth/attributes/{userId}".format(userId = attr['id']))
@@ -129,12 +120,7 @@ def test_signup():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
 
 	# signup try
 	response = client.put("/auth/signup")
@@ -177,12 +163,8 @@ def test_signup():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
+
 
 	# signup dublicate email
 	response = client.put(
@@ -232,12 +214,7 @@ def test_login():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
 	
 	# signup
 	response = client.put(
@@ -297,12 +274,7 @@ def test_login():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
 
 	# signup guest
 	response = client.put("/auth/signup-guest")
@@ -333,12 +305,7 @@ def test_refresh():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
 	
 	# signup
 	response = client.put(
@@ -355,12 +322,7 @@ def test_refresh():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403
 
 	# refresh
 	response = client.get("/auth/refresh")
@@ -382,9 +344,4 @@ def test_refresh():
 
 	# not registered
 	response = client.get("/auth/attributes")
-	assert response.status_code == 200
-	assert response.json() == {
-		"id": None,
-		"isGuest": None,
-		"name": None,
-	}
+	assert response.status_code == 403

@@ -31,7 +31,7 @@ async def getUsersRepo():
 router = APIRouter()
 
 
-@router.get("/attributes")
+@router.get("/attributes", dependencies=[Depends(checkAccess(mustBeAuthorized))])
 async def getMyAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
 						payload: dict = Depends(getJWTPayload)) -> UserAttributes:
 	userId = payload.get('userId', None)
