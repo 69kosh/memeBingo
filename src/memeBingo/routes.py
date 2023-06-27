@@ -7,7 +7,7 @@ from starlette.status import *
 from auth.jwt import checkAccess
 from .schemas import *
 from .mongoRepo import *
-from interchange import getUserAttributes
+from interchange import getUsersRepo, AbcUsersRepo
 from .imagesGenerator import ImagesGenerator
 
 from pymongo import MongoClient
@@ -30,14 +30,12 @@ gamesCollection = mongoDb.get_collection('games')
 async def getCardsRepo():
 	return CardsRepo(cardsCollection)
 
-
 async def getGamesRepo():
 	return GamesRepo(gamesCollection)
 
 async def getImagesGenerator():
 	# print('Awaiting font file: ' + basePath + "/assets/Roboto-Regular.ttf")
 	return ImagesGenerator(assetsDir=basePath + "/assets/")
-
 
 def mustBeSameUser(subject, request):
 	return subject.get('userId') == request.get('userId') if request.get('userId') is not None else False
@@ -170,34 +168,36 @@ async def isCardOwner(id: str, userId: str,
 
 
 @router.get("/cards/{id}/canShare")
-async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
-	""" Check card for share, the card author must not be a guest"""
+async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+		       usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
+	""" Check card for share, the card author must not be a guest and card not hidden"""
 	try:
 		card = cardsRepo.get(id)
-		user = getUserAttributes(card.authorId)
-		return not user.isGuest
+		user = usersRepo.get(card.authorId)
+		return not user.isGuest and not card.hidden
 	except:
 		return False
 	
+
+@router.get("/games/{id}/canShare")
+async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
+		       cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
+		       usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
+	""" Check game for share, the card author must not be a guest, game owner must not be a guest and card and game not hidden"""
+	try:
+		game = gamesRepo.get(id)
+		card = cardsRepo.get(game.cardId)
+		author = usersRepo.get(card.authorId)
+		owner = usersRepo.get(game.ownerId)
+		return not author.isGuest and not owner.isGuest and not card.hidden and not game.hidden
+	except:
+		return False
+	
+
 @router.get("/cards/{id}/canEdit")
 async def canEditCard(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> bool:
 	""" Check card for edit, it must not be played """
 	return gamesRepo.getCountByCard(id) == 0
-
-
-
-@router.get("/games/{id}/canShare")
-async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
-					   cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
-	""" Check game for share, the card author must not be a guest"""
-	try:
-		game = gamesRepo.get(id)
-		card = cardsRepo.get(game.cardIdid)
-		user = getUserAttributes(card.authorId)
-		return not user.isGuest
-	except:
-		return False
-
 
 @router.get("/games/{id}")
 async def getGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> GameView:

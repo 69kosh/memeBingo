@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from memeBingo.routes import router as memeRouter, getCardsRepo, getGamesRepo
+from auth.routes import router as authRouter
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from memeBingo.repo import *
@@ -8,6 +9,7 @@ from pymongo import MongoClient
 from exceptions import OtherValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
+from interchange import *
 
 from auth.jwt import signToken
 
@@ -15,6 +17,7 @@ import re
 
 app = FastAPI(redoc_url=None)
 app.include_router(memeRouter, tags=["memeBingo"])
+app.include_router(authRouter, tags=["auth"], prefix='/auth')
 
 @app.exception_handler(OtherValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -32,6 +35,10 @@ cardsCollection = mongoDb.get_collection('cards')
 cardsCollection.drop()
 gamesCollection = mongoDb.get_collection('games')
 gamesCollection.drop()
+usersCollection = mongoDb.get_collection('users')
+usersCollection.drop()
+authCollection = mongoDb.get_collection('auth')
+authCollection.drop()
 
 def cardsRepo():
 	return CardsRepo(cardsCollection)
@@ -39,8 +46,16 @@ def cardsRepo():
 def gamesRepo():
 	return GamesRepo(gamesCollection)
 
+def usersRepo():
+	return UsersRepo(usersCollection)
+
+def authRepo():
+	return AuthRepo(authCollection)
+
 app.dependency_overrides[getCardsRepo] = cardsRepo
 app.dependency_overrides[getGamesRepo] = gamesRepo
+app.dependency_overrides[getUsersRepo] = usersRepo
+app.dependency_overrides[getAuthRepo] = authRepo
 
 client = TestClient(app)
 
@@ -418,22 +433,128 @@ def test_startUpdateAndHideCard():
 	assert len(cardIds) == 0
 
 # unable for testing, cos user needed
-# def test_canShare():
+def test_canShare():
 
-# 	userId = 'qwe1234567890'
+	# logout
+	client.cookies.clear()
 
-# 	token = signToken({'userId':userId})
-# 	client.cookies.set('at', token)
+	# guest auth
+	response = client.put("/auth/signup-guest")
+	assert response.status_code == 201
+	attr = response.json()
+	userId = attr['id']
 
-# 	# create card
-# 	data = {"phrases": [], "title": "string", "description": "string"}
-# 	response = client.post("/cards/", params = {'userId':userId}, json=data )
-# 	card = response.json()
-# 	cardId = card['id']
 
-# 	# start game
-# 	response = client.post("/games/", params = {'userId':userId, 'cardId': cardId} )
-# 	assert response.status_code == 201
-# 	game1 = response.json()
-# 	assert game1['cardId'] == cardId
-# 	gameId1 = game1['id']
+	# create card
+	data = {"phrases": [], "title": "string", "description": "string"}
+	response = client.post("/cards/", params = {'userId':userId}, json=data )
+	assert response.status_code == 201
+	card = response.json()
+	cardIdg = card['id']
+
+	# start game
+	response = client.post("/games/", params = {'userId':userId, 'cardId': cardIdg} )
+	assert response.status_code == 201
+	game1 = response.json()
+	assert game1['cardId'] == cardIdg
+	gameIdgg = game1['id']
+
+	# logout
+	client.cookies.clear()
+
+	# user reg
+	response = client.put(
+		"/auth/signup", json={'email': 'email@email.qwe', 'name': 'name', 'password': 'password78'})
+	assert response.status_code == 201
+	attr = response.json()
+	userId = attr['id']
+
+	# create card
+	data = {"phrases": [], "title": "string", "description": "string"}
+	response = client.post("/cards/", params = {'userId':userId}, json=data )
+	assert response.status_code == 201
+	card = response.json()
+	cardIdr = card['id']
+
+	# start game
+	response = client.post("/games/", params = {'userId':userId, 'cardId': cardIdr} )
+	assert response.status_code == 201
+	game1 = response.json()
+	assert game1['cardId'] == cardIdr
+	gameIdrr = game1['id']
+
+
+	# start game from guest card
+	response = client.post("/games/", params = {'userId':userId, 'cardId': cardIdg} )
+	assert response.status_code == 201
+	game1 = response.json()
+	assert game1['cardId'] == cardIdg
+	gameIdgr = game1['id']
+
+
+	# card of registered user
+	response = client.get('/cards/' + cardIdr + '/canShare')
+	assert response.status_code == 200
+	attr = response.json()
+	assert attr == True
+
+	# game of registered of card of registered user
+	response = client.get('/games/' + gameIdrr + '/canShare')
+	assert response.status_code == 200
+	attr = response.json()
+	assert attr == True
+
+	# game of registered of card of guest user
+	response = client.get('/games/' + gameIdgr + '/canShare')
+	assert response.status_code == 200
+	attr = response.json()
+	assert attr == False
+
+	# logout
+	client.cookies.clear()
+
+	# guest auth
+	response = client.put("/auth/signup-guest")
+	assert response.status_code == 201
+	attr = response.json()
+	userId = attr['id']
+
+	# create game on card of registered user
+	response = client.post("/games/", params = {'userId':userId, 'cardId': cardIdr} )
+	assert response.status_code == 201
+	game1 = response.json()
+	assert game1['cardId'] == cardIdr
+	gameIdrg = game1['id']
+
+	# game of guest of card of registered user
+	response = client.get('/games/' + gameIdrg + '/canShare')
+	assert response.status_code == 200
+	attr = response.json()
+	assert attr == False
+
+	# logout
+	client.cookies.clear()
+
+	# user login
+	response = client.post(
+		"/auth/login", json={'email': 'email@email.qwe', 'password': 'password78'})
+	assert response.status_code == 200
+	attr = response.json()
+	userId = attr['id']
+
+	# hide
+	response = client.delete("/cards/" + cardIdr, params = {'userId':userId})
+	assert response.status_code == 200
+
+	# hidden card of registered user
+	response = client.get('/cards/' + cardIdr + '/canShare')
+	assert response.status_code == 200
+	attr = response.json()
+	assert attr == False
+
+	# game of registered of hidden card of registered user
+	response = client.get('/games/' + gameIdrr + '/canShare')
+	assert response.status_code == 200
+	attr = response.json()
+	assert attr == False
+	

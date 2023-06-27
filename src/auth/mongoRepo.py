@@ -35,7 +35,7 @@ class AuthRepo(AbcAuthRepo):
                         iterations=iters)
         return binascii.hexlify(dk).decode('utf-8')
 
-    def __init__(self, collection, salt) -> None:
+    def __init__(self, collection, salt = 'salt') -> None:
         super().__init__()
         self.collection = collection
         self.salt = salt

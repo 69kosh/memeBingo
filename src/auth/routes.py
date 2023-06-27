@@ -1,32 +1,11 @@
 from fastapi import APIRouter, Request, Response, Depends
 from fastapi.exceptions import HTTPException
 from .schemas import *
-from .mongoRepo import *
 from .jwt import *
 from starlette.status import HTTP_404_NOT_FOUND
 from exceptions import OtherValidationError
 import random
-
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-PASSWORD_SALT = os.getenv('PASSWORD_SALT')
-MONGODB_URL = os.getenv('MONGODB_URL')
-mongoClient = MongoClient(MONGODB_URL, uuidRepresentation='standard')
-mongoDb = mongoClient.get_database('meme')
-usersCollection = mongoDb.get_collection('users')
-authCollection = mongoDb.get_collection('auth')
-
-
-async def getAuthRepo():
-	return AuthRepo(authCollection, PASSWORD_SALT)
-
-
-async def getUsersRepo():
-	return UsersRepo(usersCollection)
+from .connect import *
 
 router = APIRouter()
 
