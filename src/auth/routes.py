@@ -105,7 +105,7 @@ async def refresh(request: Request, response: Response,
 			detail="Not authenticated"
 		)
 	# here can add additional data to payload from user attributes
-	payload = {'userId': user.id, 'isGuest': False}
+	payload = {'userId': user.id, 'isGuest': user.isGuest}
 	setTokens(response=response,  payload=payload)
 	return UserAttributes.parse_obj(user)
 
@@ -119,5 +119,5 @@ async def signupGuest(response: Response,
 	payload = {'userId': id, 'isGuest': True}
 	setTokens(response=response,  payload=payload)
 	user = userRepo.get(id)
-	return UserAttributes() if user is None else UserAttributes.parse_obj(user)
+	return UserAttributes.parse_obj(user)
 
