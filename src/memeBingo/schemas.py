@@ -15,6 +15,7 @@ class CardView(CardForm):
     updatedAt: datetime
     parentCardId: str | None
     hidden: bool = False
+    isGuest: bool = True
 
 
 class GameForm(BaseModel):
@@ -27,4 +28,5 @@ class GameView(GameForm):
     createdAt: datetime
     updatedAt: datetime
     hidden: bool = False
+    isGuest: bool = True
 

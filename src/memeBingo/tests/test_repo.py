@@ -119,15 +119,19 @@ def test_findByTagsCard(cardsRepo: AbcCardsRepo):
 
 	userId = 'qwe123'
 	model1 = CardModel(authorId=userId, phrases=[], title='hello21', description='', tags=['t1'],
-					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False)
 	model2 = CardModel(authorId=userId, phrases=[], title='hello22', description='', tags=['t1', 't2'],
-					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False)
 	model3 = CardModel(authorId=userId, phrases=[], title='hello23', description='', tags=['t1', 't2', 't3'],
-					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False)
+	
+	model4 = CardModel(authorId=userId, phrases=[], title='hello23', description='', tags=['t1', 't2', 't3'],
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=True)
 
 	id1 = cardsRepo.create(model1)
 	id2 = cardsRepo.create(model2)
 	id3 = cardsRepo.create(model3)
+	id4 = cardsRepo.create(model4)
 
 	ids = [id3, id2, id1]
 
@@ -145,6 +149,12 @@ def test_findByTagsCard(cardsRepo: AbcCardsRepo):
 	assert id1 in resIds
 	assert id2 in resIds
 	assert id3 in resIds
+
+
+	resIds = cardsRepo.findByTags(tags=['t3'], withGuests=True)
+	assert len(resIds) == 2
+	assert id3 in resIds
+	assert id4 in resIds
 
 def test_findTagsByTagsCard(cardsRepo: AbcCardsRepo):
 

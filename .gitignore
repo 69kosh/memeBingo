@@ -51,3 +51,4 @@ l10n/
 coverage.*
 .coverage
 test.bat
+.rabbitmq

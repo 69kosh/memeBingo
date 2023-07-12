@@ -14,7 +14,9 @@ services:
       PASSWORD_SALT: qwerty
     ports:
       - 8080:8080
-      
+    depends_on:
+      - mongo
+
   mongo:
     image: mongo
     restart: always
@@ -30,3 +32,6 @@ services:
     build: ./nginx
     ports:
         - 80:80
+
+    depends_on:
+      - backend

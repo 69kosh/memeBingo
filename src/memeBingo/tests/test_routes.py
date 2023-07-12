@@ -196,7 +196,7 @@ def test_getAndFindCard():
 	userId2 = 'qwe4'
 
 	# setup
-	token = signToken({'userId':userId})
+	token = signToken({'userId':userId, 'isGuest':False})
 	client.cookies.set('at', token)
 
 	data = {"phrases": [],"title": "string","description": "string", 'tags': ['ft1', 'ft2']}
@@ -214,7 +214,7 @@ def test_getAndFindCard():
 	assert response.status_code == 201
 	card13 = response.json()
 
-	token = signToken({'userId':userId2})
+	token = signToken({'userId':userId2, 'isGuest':False})
 	client.cookies.set('at', token)
 
 	data = {"phrases": [],"title": "string","description": "string", 'tags': ['ft1', 'ft2']}

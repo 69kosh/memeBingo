@@ -23,13 +23,12 @@ class CardsRepo(AbcCardsRepo):
 		if docs:
 			return [CardModel.parse_obj(doc) for doc in docs]
 
-	def update(self, id: str, card: CardUpdateModel, conditions: dict = {}) -> bool:
+	def update(self, id: str, card: CardUpdateModel | CardSetIsGuestModel, conditions: dict = {}) -> bool:
 		res = self.collection.update_one(
 			filter=conditions | {'_id': id}, update={'$set': card.dict()})
 
 		return res.modified_count == 1
 	
-
 	def hide(self, id: str, conditions: dict = {}) -> bool:
 		res = self.collection.update_one(
 			filter=conditions | {'_id': id}, update={'$set': {'hidden': True}})
@@ -37,14 +36,22 @@ class CardsRepo(AbcCardsRepo):
 		return res.modified_count == 1
 
 
-	def findByTags(self, tags: list[str], limit: int = 100) -> list[str]:
-		docs = self.collection.find(filter={'tags': {'$all': tags}, 'hidden': False} if len(tags) else {'hidden': False},
+	def findByTags(self, tags: list[str], limit: int = 100, 
+                   withHidden:bool = False, withGuests:bool = False) -> list[str]:
+		conds = {}
+		if not withHidden:
+			conds['hidden'] = False
+		if not withGuests:
+			conds['isGuest'] = False
+
+		docs = self.collection.find(filter=({'tags': {'$all': tags}} | conds) if len(tags) else conds,
 									projection={'_id': 1},
 									sort=[("createdAt", -1)],
 									limit=limit)
 		return [doc['_id'] for doc in docs]
 
-	def findTagsByTags(self, tags: list[str], limit: int = 100) -> list[str]:
+	def findTagsByTags(self, tags: list[str], limit: int = 100, 
+                   withHidden:bool = False, withGuests:bool = False) -> list[str]:
 		result = self.collection.aggregate([
 			{'$match': {'tags': {'$all': tags}, 'hidden': False} if len(tags) else {'hidden': False} },
 			{'$sort': {'createdAt': -1}},
@@ -56,8 +63,8 @@ class CardsRepo(AbcCardsRepo):
 		])
 		return [doc['_id'] for doc in result]
 
-	def findByAuthor(self, authorId: str, limit: int = 100) -> list[str]:
-		docs = self.collection.find(filter={'authorId': authorId, 'hidden': False},
+	def findByAuthor(self, authorId: str, limit: int = 100, withHidden: bool = False) -> list[str]:
+		docs = self.collection.find(filter={'authorId': authorId} | ({} if withHidden else {'hidden': False}),
 									projection={'_id': 1},
 									sort=[("createdAt", -1)],
 									limit=limit)
@@ -89,7 +96,7 @@ class GamesRepo(AbcGamesRepo):
 		res = self.collection.insert_one(game.dict(by_alias=True))
 		return res.inserted_id if res.inserted_id else None
 	
-	def update(self, id: str, game: GameUpdateModel, conditions: dict = {}) -> bool:
+	def update(self, id: str, game: GameUpdateModel | GameSetIsGuestModel, conditions: dict = {}) -> bool:
 		res = self.collection.update_one(
 			filter=conditions | {'_id': id}, update={'$set': game.dict()})
 
@@ -101,14 +108,22 @@ class GamesRepo(AbcGamesRepo):
 
 		return res.modified_count == 1
 
-	def findCardsByOwner(self, ownerId: str, limit: int = 100) -> list[str]:
+	def findCardsByOwner(self, ownerId: str, limit: int = 100, withHidden: bool = False) -> list[str]:
 		result = self.collection.aggregate([
-			{'$match': {'ownerId': ownerId, 'hidden': False}},
+			{'$match': {'ownerId': ownerId} | ({} if withHidden else {'hidden': False})},
 			{'$group': {'_id': "$cardId", 'lastGame': {'$max': '$createdAt'}}},
 			{'$sort': {'lastGame': -1}},
 			{'$limit': limit }
 		])
 		return [doc['_id'] for doc in result]
+	
+
+	def findByOwner(self, ownerId: str, limit: int = 100, withHidden: bool = False) -> list[str]:
+		docs = self.collection.find(filter={'ownerId': ownerId} | ({} if withHidden else {'hidden': False}),
+									projection={'_id': 1},
+									sort=[("createdAt", -1)],
+									limit=limit)
+		return [doc['_id'] for doc in docs]
 
 	def getCountByCard(self, cardId: str) -> int:
 		return self.collection.count_documents(filter={'cardId': cardId})

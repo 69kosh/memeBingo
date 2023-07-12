@@ -18,12 +18,17 @@ class CardUpdateModel(BaseModel):
 	appearance: dict = Field(default = {})
 	updatedAt: datetime = Field(default_factory=now)
 
+class CardSetIsGuestModel(BaseModel):
+	isGuest: bool
+	updatedAt: datetime = Field(default_factory=now)
+
 class CardModel(CardUpdateModel):
 	id: str = Field(default_factory=uuid.uuid4, alias="_id")
 	authorId: str
 	parentCardId: str | None
 	createdAt: datetime = Field(default_factory=now)
 	hidden: bool = False
+	isGuest: bool = True
 
 	@validator('id', pre=True, always=True)
 	def id_to_str(cls, v):
@@ -34,13 +39,18 @@ class GameUpdateModel(BaseModel):
 	# markType: str | None
 	updatedAt: datetime = Field(default_factory=now) 
 
+class GameSetIsGuestModel(BaseModel):
+	isGuest: bool
+	updatedAt: datetime = Field(default_factory=now)
+
 class GameModel(GameUpdateModel):
 	id: str = Field(default_factory=uuid.uuid4, alias="_id")
 	cardId: str
 	ownerId: str
 	createdAt: datetime = Field(default_factory=now) 
 	hidden: bool = False
-
+	isGuest: bool = True
+	
 	@validator('id', pre=True, always=True)
 	def id_to_str(cls, v):
 		return str(v)

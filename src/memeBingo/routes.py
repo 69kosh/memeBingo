@@ -4,50 +4,34 @@ from starlette.responses import StreamingResponse
 from fastapi.security.http import *
 from typing import Literal
 from starlette.status import *
-from auth.jwt import checkAccess
+from auth.jwt import checkAccess, getJWTPayload
+# from interchange import getUsersRepo, AbcUsersRepo
 from .schemas import *
 from .mongoRepo import *
-from interchange import getUsersRepo, AbcUsersRepo
 from .imagesGenerator import ImagesGenerator
+from .connect import *
 
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
 from io import BytesIO
 from os import getcwd
 
+
 basePath = getcwd()
 
-load_dotenv()
-PASSWORD_SALT = os.getenv('PASSWORD_SALT')
-MONGODB_URL = os.getenv('MONGODB_URL')
-mongoClient = MongoClient(MONGODB_URL, uuidRepresentation='standard')
-mongoDb = mongoClient.get_database('meme')
-cardsCollection = mongoDb.get_collection('cards')
-gamesCollection = mongoDb.get_collection('games')
-
-
-async def getCardsRepo():
-	return CardsRepo(cardsCollection)
-
-async def getGamesRepo():
-	return GamesRepo(gamesCollection)
-
 async def getImagesGenerator():
-	# print('Awaiting font file: ' + basePath + "/assets/Roboto-Regular.ttf")
 	return ImagesGenerator(assetsDir=basePath + "/assets/")
 
 def mustBeSameUser(subject, request):
 	return subject.get('userId') == request.get('userId') if request.get('userId') is not None else False
 
-
 router = APIRouter()
 
 @router.get("/cards")
-async def listCards(tags: Annotated[list, Query()] = [], limit: int = 20,
+async def listCards(tags: Annotated[list, Query()] = [], limit: int = 20, 
+		    		withHidden:bool = False, withGuests:bool = False,
 					cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> list[str]:
 	""" Return list of latest cards, filtered by tags"""
-	return cardsRepo.findByTags(tags=tags, limit=limit)
+	return cardsRepo.findByTags(tags=tags, limit=limit, 
+			     withHidden=withHidden, withGuests=withGuests)
 
 
 @router.get("/cards/tags")
@@ -91,35 +75,23 @@ async def getCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> C
 			detail="Not found"
 		)
 	return CardView.parse_obj(model.dict())
-
-# @router.get("/cards/{id}/canView")
-# async def canCardView(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
-# 	''' Check if card not hide and author of card is not guest or author is current user'''
-# 	model = cardsRepo.get(id)
-# 	if model is None:
-# 		raise HTTPException(
-# 			status_code=HTTP_404_NOT_FOUND,
-# 			detail="Not found"
-# 		)
-# 	return CardView.parse_obj(model.dict())
-
-
+	
 @router.post("/cards/", status_code=201, dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def createCard(userId: str, card: CardForm,
+async def createCard(userId: str, card: CardForm, user: dict = Depends(getJWTPayload),
 					 cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> CardView:
 	""" Create new card by owner """
-	model = CardModel.parse_obj(card.dict() | {'authorId': userId})
+	model = CardModel.parse_obj(card.dict() | {'authorId': userId, 'isGuest': user.get('isGuest', True)})
 	id = cardsRepo.create(card=model)
 	return CardView.parse_obj(model.dict())
 
 
 @router.post("/cards/{id}/clone", status_code=201, dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def cloneCard(id: str, userId: str,
+async def cloneCard(id: str, userId: str, user: dict = Depends(getJWTPayload),
 					cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> CardView:
 	""" Create new card as clone from existed one """
 	parentModel = cardsRepo.get(id=id)
 	newModel = parentModel.dict(exclude=set(['id', 'createdAt', 'updatedAt', 'authorId', 'parentCardId'
-											 ])) | {'authorId': userId, 'parentCardId': id}
+											 ])) | {'authorId': userId, 'parentCardId': id, 'isGuest': user.get('isGuest', True)}
 	model = CardModel.parse_obj(newModel)
 	id = cardsRepo.create(card=model)
 	return CardView.parse_obj(model.dict())
@@ -168,28 +140,23 @@ async def isCardOwner(id: str, userId: str,
 
 
 @router.get("/cards/{id}/canShare")
-async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
-		       usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
+async def canShareCard(id: str, cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
 	""" Check card for share, the card author must not be a guest and card not hidden"""
 	try:
 		card = cardsRepo.get(id)
-		user = usersRepo.get(card.authorId)
-		return not user.isGuest and not card.hidden
+		return not card.isGuest and not card.hidden
 	except:
 		return False
 	
 
 @router.get("/games/{id}/canShare")
 async def canShareGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo),
-		       cardsRepo: AbcCardsRepo = Depends(getCardsRepo), 
-		       usersRepo: AbcUsersRepo = Depends(getUsersRepo)) -> bool:
+		       cardsRepo: AbcCardsRepo = Depends(getCardsRepo)) -> bool:
 	""" Check game for share, the card author must not be a guest, game owner must not be a guest and card and game not hidden"""
 	try:
 		game = gamesRepo.get(id)
 		card = cardsRepo.get(game.cardId)
-		author = usersRepo.get(card.authorId)
-		owner = usersRepo.get(game.ownerId)
-		return not author.isGuest and not owner.isGuest and not card.hidden and not game.hidden
+		return not card.isGuest and not game.isGuest and not card.hidden and not game.hidden
 	except:
 		return False
 	
@@ -211,12 +178,12 @@ async def getGame(id: str, gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> G
 
 
 @router.post("/games/", status_code=201, dependencies=[Depends(checkAccess(mustBeSameUser))])
-async def startGame(userId: str, cardId: str,
+async def startGame(userId: str, cardId: str, user: dict = Depends(getJWTPayload),
 					cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
 					gamesRepo: AbcGamesRepo = Depends(getGamesRepo)) -> GameView:
 	""" Start game by card """
 	card = cardsRepo.get(cardId)
-	model = GameModel(ownerId=userId, cardId=cardId)
+	model = GameModel(ownerId=userId, cardId=cardId, isGuest=user.get('isGuest', True))
 	gameId = gamesRepo.create(game=model)
 	return GameView.parse_obj(model.dict())
 

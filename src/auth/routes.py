@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response, Depends
+from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
 from fastapi.exceptions import HTTPException
 from .schemas import *
 from .jwt import *
@@ -6,9 +6,9 @@ from starlette.status import HTTP_404_NOT_FOUND
 from exceptions import OtherValidationError
 import random
 from .connect import *
+from eventHandles import UserUpdatedEvent, sendEvent
 
 router = APIRouter()
-
 
 @router.get("/attributes", dependencies=[Depends(checkAccess(mustBeAuthorized))])
 async def getMyAttributes(userRepo: AbcUsersRepo = Depends(getUsersRepo),
@@ -30,6 +30,7 @@ async def getUserAttributes(userId: str, userRepo: AbcUsersRepo = Depends(getUse
 
 @router.put("/signup", status_code=201, dependencies=[Depends(checkAccess(mustBeNotAuthorizedOrGuest))])
 async def signup(signupForm: SignupForm, request: Request, response: Response,
+				 events: BackgroundTasks,
 				 authRepo: AbcAuthRepo = Depends(getAuthRepo),
 				 userRepo: AbcUsersRepo = Depends(getUsersRepo)) -> UserAttributes:
 	
@@ -48,8 +49,10 @@ async def signup(signupForm: SignupForm, request: Request, response: Response,
 		except DuplicateKeyError as e:
 			raise OtherValidationError(
 				[{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
-		
 		userId = userRepo.update(user.id, name=signupForm.name, isGuest=False)
+		oldModel = user
+		newModel = userRepo.get(user.id)
+		events.add_task(sendEvent, UserUpdatedEvent(id=user.id, oldModel=oldModel, newModel=newModel))
 	
 	else:
 		# new user
@@ -62,10 +65,10 @@ async def signup(signupForm: SignupForm, request: Request, response: Response,
 			raise OtherValidationError(
 				[{'loc': ['body', 'email'], 'msg': 'Email already exists', 'type': 'dublicate email'}])
 
+	user = userRepo.get(userId)
 	# here can add additional data to payload from user attributes
 	payload = {'userId': userId, 'isGuest': False}
 	setTokens(response=response,  payload=payload)
-	user = userRepo.get(userId)
 	return UserAttributes() if user is None else UserAttributes.parse_obj(user)
 
 
