@@ -230,7 +230,7 @@ async def getCardImage(id: str, size: Literal['full', 'small'] = 'full',
 			   cardsRepo: AbcCardsRepo = Depends(getCardsRepo),
 			   imagesGenerator: ImagesGenerator = Depends(getImagesGenerator)) -> StreamingResponse:
 	card = cardsRepo.get(id)
-	if card is None:
+	if card is None or card.isGuest or card.hidden:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
 		)
@@ -253,13 +253,13 @@ async def getGameImage(id: str, size: Literal['full', 'small'] = 'full',
 	
 
 	game = gamesRepo.get(id)
-	if game is None:
+	if game is None or game.isGuest or game.hidden:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
 		)
 
 	card = cardsRepo.get(game.cardId)
-	if card is None:
+	if card is None  or card.isGuest or card.hidden:
 		raise HTTPException(
 			status_code=HTTP_404_NOT_FOUND,
 		)
