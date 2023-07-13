@@ -160,12 +160,12 @@ class ImagesGenerator:
 			image.alpha_composite(titleImage, (paddingX - tileMarginX, paddingY - tileMarginY))
 
 			font = ImageFont.truetype(font=self.getFont(), size=25)
-			innerX = self._cardSizeWithTitle[0] - 2 * tilePaddingX
-			innerY = titleTileSizeY - 2 * tilePaddingX
+			innerX = self._cardSizeWithTitle[0] - 2 * tilePaddingX - 2 * paddingX
+			innerY = titleTileSizeY - 2 * tilePaddingX - 2*paddingY
 			wraped = "\n".join(self.wrap(draw = draw, text = card.title, width = innerX, font=font)[0:2])
 			bbox = draw.multiline_textbbox((0, 0), wraped, font=font, align='center')
 			# print(bbox)
-			draw.multiline_text(((paddingX + innerX - bbox[2])//2, (paddingY + innerY - bbox[3] + bbox[1])//2 ), wraped, font=font, align='center', fill=textColor)
+			draw.multiline_text((tilePaddingX + paddingX + (innerX - bbox[2])//2, tilePaddingX + paddingY + (innerY - bbox[3] + bbox[1])//2 ), wraped, font=font, align='center', fill=textColor)
 
 		for i in range(25):
 			x = paddingX + (i % 5) * (tileSizeX + tileMarginX)
