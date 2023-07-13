@@ -77,7 +77,7 @@ class ImagesGenerator:
 		tileDraw.pieslice((x, y, 
 							x + resize * (roundness*2), y + resize * (roundness*2)), 
 							start=180, end=270, fill=shadowColor)
-		tileDraw.pieslice((x, y + resize * (tileSizeX - roundness*2), 
+		tileDraw.pieslice((x, y + resize * (tileSizeY - roundness*2), 
 							x + resize * (roundness*2), y + resize * (tileSizeY)), 
 							start=90, end=180, fill=shadowColor)
 
@@ -103,7 +103,7 @@ class ImagesGenerator:
 		tileDraw.pieslice((x, y, 
 							x + resize * (roundness*2) + 1, y + resize * (roundness*2) + 1) , 
 							start=180, end=270, fill=tileColor)
-		tileDraw.pieslice((x, y + resize * (tileSizeX - roundness*2), 
+		tileDraw.pieslice((x, y + resize * (tileSizeY - roundness*2), 
 							x + resize * (roundness*2) + 1, y + resize * (tileSizeY) + 1), 
 							start=90, end=180, fill=tileColor)
 
@@ -138,7 +138,7 @@ class ImagesGenerator:
 
 	def getCardImage(self, card:CardModel, size:Literal['full','small'] = 'full', withTitle:bool = False, 
 		  tileSizeX = 117, tileSizeY = 117, tileMarginX = 6, tileMarginY = 6, paddingX = 8, paddingY = 8,
-		  tilePaddingX = 5, tilePaddingY=5):
+		  tilePaddingX = 5, tilePaddingY=5, titleTileSizeY=84):
 
 		phrases = dict(enumerate(card.phrases))
 
@@ -153,15 +153,29 @@ class ImagesGenerator:
 		
 		textColor = self.parseColor(card.appearance.get('textColor', '#666666'))
 
+		titleOffset = 0
+		if withTitle:
+			titleOffset = titleTileSizeY + tileMarginY
+			titleImage = self.getTileImage(tileColor=tileColor, tileSizeX=self._cardSizeWithTitle[0] - paddingX * 2, tileSizeY=titleTileSizeY)
+			image.alpha_composite(titleImage, (paddingX - tileMarginX, paddingY - tileMarginY))
+
+			font = ImageFont.truetype(font=self.getFont(), size=25)
+			innerX = self._cardSizeWithTitle[0] - 2 * tilePaddingX
+			innerY = titleTileSizeY - 2 * tilePaddingX
+			wraped = "\n".join(self.wrap(draw = draw, text = card.title, width = innerX, font=font)[0:2])
+			bbox = draw.multiline_textbbox((0, 0), wraped, font=font, align='center')
+			# print(bbox)
+			draw.multiline_text(((paddingX + innerX - bbox[2])//2, (paddingY + innerY - bbox[3] + bbox[1])//2 ), wraped, font=font, align='center', fill=textColor)
+
 		for i in range(25):
 			x = paddingX + (i % 5) * (tileSizeX + tileMarginX)
-			y = paddingY + (i // 5) * (tileSizeY + tileMarginY)
+			y = titleOffset + paddingY + (i // 5) * (tileSizeY + tileMarginY)
 
 			image.alpha_composite(tileImage, (x - tileMarginX, y - tileMarginY))
 
 		for i in range(25):
 			x = paddingX + (i % 5) * (tileSizeX + tileMarginX) + tilePaddingX
-			y = paddingY + (i // 5) * (tileSizeY + tileMarginY) + tilePaddingY
+			y = titleOffset + paddingY + (i // 5) * (tileSizeY + tileMarginY) + tilePaddingY
 
 			fontSize = [t for t in self._fontSizes if len(phrases.get(i, '')) < t[0]][0]
 			font = ImageFont.truetype(font=self.getFont(), size=fontSize[1])
