@@ -206,9 +206,9 @@ class ImagesGenerator:
 
 	def getGameImage(self, card:CardModel, game: GameModel, size:Literal['full','small'] = 'full', withTitle:bool = False, 
 		  tileSizeX = 117, tileSizeY = 117, tileMarginX = 6, tileMarginY = 6, paddingX = 8, paddingY = 8,
-		  tilePaddingX = 5, tilePaddingY=5):
+		  tilePaddingX = 5, tilePaddingY=5, titleTileSizeY=84):
 		
-		image = self.getCardImage(card=card)
+		image = self.getCardImage(card=card, withTitle=withTitle, titleTileSizeY=titleTileSizeY)
 
 		checkColor = self.parseColor(card.appearance.get('markColor', '#ff3333'))
 
@@ -221,6 +221,9 @@ class ImagesGenerator:
 
 			x = paddingX + (i % 5) * (tileSizeX + tileMarginX)
 			y = paddingY + (i // 5) * (tileSizeY + tileMarginY)
+			
+			if withTitle:
+				y = y + titleTileSizeY + tileMarginY
 
 			image.alpha_composite(checkImage, (x + tilePaddingX , y + tilePaddingY))
 
