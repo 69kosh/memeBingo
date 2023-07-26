@@ -160,15 +160,21 @@ def test_findTagsByTagsCard(cardsRepo: AbcCardsRepo):
 
 	userId = 'qwe123'
 	model1 = CardModel(authorId=userId, phrases=[], title='hello21', description='', tags=['t21'],
-					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False)
 	model2 = CardModel(authorId=userId, phrases=[], title='hello22', description='', tags=['t21', 't22'],
-					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False)
 	model3 = CardModel(authorId=userId, phrases=[], title='hello23', description='', tags=['t21', 't22', 't23'],
-					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1')
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False)
+	model4 = CardModel(authorId=userId, phrases=[], title='hello23', description='', tags=['t21', 't22', 't23'],
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=True)
+	model5 = CardModel(authorId=userId, phrases=[], title='hello23', description='', tags=['t21', 't22', 't23'],
+					   outlineColor='c1', textColor='c2', backgroundColor='c3', markType='1', isGuest=False, hidden=True)
 
 	id1 = cardsRepo.create(model1)
 	id2 = cardsRepo.create(model2)
 	id3 = cardsRepo.create(model3)
+	id4 = cardsRepo.create(model4)
+	id5 = cardsRepo.create(model5)
 
 	ids = [id3, id2, id1]
 

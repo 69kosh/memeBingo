@@ -52,8 +52,16 @@ class CardsRepo(AbcCardsRepo):
 
 	def findTagsByTags(self, tags: list[str], limit: int = 100, 
                    withHidden:bool = False, withGuests:bool = False) -> list[str]:
+		conds = {}
+		if len(tags):
+			conds['tags'] = {'$all': tags}
+		if not withHidden:
+			conds['hidden'] = False
+		if not withGuests:
+			conds['isGuest'] = False
+
 		result = self.collection.aggregate([
-			{'$match': {'tags': {'$all': tags}, 'hidden': False} if len(tags) else {'hidden': False} },
+			{'$match': conds},
 			{'$sort': {'createdAt': -1}},
 			{'$limit': limit },
 			{'$project': { '_id': 0, 'tags': 1 } },
